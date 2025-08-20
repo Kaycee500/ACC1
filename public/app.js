@@ -6,43 +6,87 @@
 // - Local progress in localStorage under 'dadTutorProgress'
 // - Reset Progress button clears both
 
-const LESSONS = {
-  orientation: {
-    title: 'Excel Orientation',
-    summary: 'Workbooks vs. worksheets, rows, columns, cells, and the Ribbon.',
-  seed: 'Teach the very first Excel lesson on Windows. Explain workbook, worksheet, rows, columns, cells, and the Ribbon. Include a 5-step hands-on practice and then a 3-question quiz.'
-  },
-  data: {
-    title: 'Entering & Saving Data',
-    summary: 'Type text and numbers, move around, and save a workbook.',
-  seed: 'Teach how to enter text and numbers, move with arrow keys, and save a workbook on Windows. Include a small practice table and a 3-question quiz.'
-  },
-  formatting: {
-    title: 'Formatting Basics',
-    summary: 'Bold, borders, resize columns/rows, number formats.',
-  seed: 'Teach bold text, borders, column width, row height, and number formats in Excel on Windows. Include a guided practice and a 3-question quiz.'
-  },
-  formulas: {
-    title: 'Simple Formulas',
-    summary: '=SUM and =AVERAGE with exact keystrokes.',
-  seed: 'Teach =SUM and =AVERAGE with exact keystrokes for Windows. Provide a tiny data set, have me compute totals and averages, then a 3-question quiz.'
-  },
-  sortfilter: {
-    title: 'Sort & Filter',
-    summary: 'Turn on Filter, sort A→Z, filter by value.',
-  seed: 'Teach how to enable Filter, sort A→Z, and filter by a value in Excel on Windows. Include a tiny sample table and a 3-question quiz.'
-  },
-  charts: {
-    title: 'Intro to Charts',
-    summary: 'Insert a column chart from a small table.',
-  seed: 'Teach how to insert a simple column chart from a small table in Excel on Windows. Provide a practice table and a 3-question quiz.'
-  },
-  printing: {
-    title: 'Printing Basics',
-    summary: 'Print preview and fit to one page.',
-  seed: 'Teach print preview, page orientation, margins, and fit to one page in Excel on Windows. Include a 3-question quiz.'
-  },
+// Adaptive Syllabus Structure (from section 4 of requirements)
+const SYLLABUS = {
+  units: {
+    A: {
+      title: "Unit A — Foundations",
+      lessons: {
+        orientation: {
+          title: 'Orientation',
+          summary: 'Workbook vs. worksheet; rows/columns/cells; the Ribbon; saving a file.',
+          objectives: ['Understand workbook vs worksheet', 'Navigate rows/columns/cells', 'Use the Ribbon interface', 'Save a file properly'],
+          seed: 'Teach the very first Excel lesson on Windows. Explain workbook, worksheet, rows, columns, cells, the Ribbon, and saving a file. Include a 5-step hands-on practice and then a 3-question quiz.'
+        },
+        navigation: {
+          title: 'Navigation & selection',
+          summary: 'Entering text/numbers; basic file management.',
+          objectives: ['Move with arrow keys', 'Select cells', 'Enter text and numbers', 'Basic file management'],
+          seed: 'Teach moving with arrow keys, selecting cells, typing text/numbers, and saving with a clear file name. Include a tiny practice table and a 3-question quiz.'
+        },
+        formatting: {
+          title: 'Formatting basics',
+          summary: 'Bold, borders, column width, row height, number formats.',
+          objectives: ['Apply bold formatting', 'Add borders', 'Adjust column width and row height', 'Set number formats'],
+          seed: 'Teach bold, borders, column width, row height, and number formats. Include an exact mini-table and a 3-question quiz.'
+        }
+      }
+    },
+    B: {
+      title: "Unit B — Core Skills",
+      lessons: {
+        formulas1: {
+          title: 'Formulas 1',
+          summary: '=SUM, =AVERAGE (exact keystrokes).',
+          objectives: ['Enter =SUM formula with exact keystrokes', 'Enter =AVERAGE formula', 'Work with cell ranges', 'Understand basic formula structure'],
+          seed: 'Teach `=SUM` and `=AVERAGE` with exact keystrokes. Provide a tiny dataset, compute totals/averages, then a 3-question quiz.'
+        },
+        autofill: {
+          title: 'Autofill & relative references',
+          summary: 'Copying formulas safely.',
+          objectives: ['Use Autofill handle', 'Understand relative references', 'Copy formulas safely', 'Recognize formula patterns'],
+          seed: 'Teach Autofill handle, relative references, and safe copying of formulas. Include a small table and a 3-question quiz.'
+        },
+        sortfilter: {
+          title: 'Sort & Filter',
+          summary: 'Turn on Filter, sort A→Z, filter by value.',
+          objectives: ['Enable Filter feature', 'Sort data A→Z', 'Filter by specific values', 'Understand data organization'],
+          seed: 'Teach turning on Filter, sorting A→Z, and filtering by value. Include a small sample and a 3-question quiz.'
+        }
+      }
+    },
+    C: {
+      title: "Unit C — Presenting & Printing", 
+      lessons: {
+        charts: {
+          title: 'Intro charts',
+          summary: 'Build a Column chart from a 2-column table.',
+          objectives: ['Select data for charts', 'Insert Column chart', 'Understand chart basics', 'Format chart elements'],
+          seed: 'Teach inserting a Column chart from a 2-column table. Provide the sample data and a 3-question quiz.'
+        },
+        printing: {
+          title: 'Printing basics',
+          summary: 'Print Preview, orientation, margins, fit to one page.',
+          objectives: ['Use Print Preview', 'Set page orientation', 'Adjust margins', 'Fit content to one page'],
+          seed: 'Teach Print Preview, orientation, margins, and \'Fit Sheet on One Page\'. Include a 3-question quiz.'
+        }
+      }
+    }
+  }
 };
+
+// Helper function to get flat lesson list for compatibility
+function getFlatLessons() {
+  const lessons = {};
+  Object.values(SYLLABUS.units).forEach(unit => {
+    Object.entries(unit.lessons).forEach(([id, lesson]) => {
+      lessons[id] = lesson;
+    });
+  });
+  return lessons;
+}
+
+const LESSONS = getFlatLessons();
 
 const els = {
   lessonList: document.getElementById('lessonList'),
@@ -66,7 +110,8 @@ const els = {
 };
 
 const HISTORY_KEY = 'history';
-const PROGRESS_KEY = 'dadTutorProgress';
+const PROGRESS_KEY = 'dadTutorProgress'; // Keep for backward compatibility
+const SYLLABUS_KEY = 'dadTutorSyllabusV1';
 
 function loadHistory() {
   try {
@@ -94,6 +139,67 @@ function saveProgress(progress) {
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 }
 
+// Syllabus management functions
+function loadSyllabus() {
+  try {
+    const raw = localStorage.getItem(SYLLABUS_KEY);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch {
+    // Fall through to create default
+  }
+  
+  // Create default syllabus with lesson statuses
+  const syllabus = {
+    units: {},
+    lastUpdated: new Date().toISOString()
+  };
+  
+  Object.entries(SYLLABUS.units).forEach(([unitId, unit]) => {
+    syllabus.units[unitId] = {
+      title: unit.title,
+      lessons: {}
+    };
+    
+    Object.entries(unit.lessons).forEach(([lessonId, lesson]) => {
+      syllabus.units[unitId].lessons[lessonId] = {
+        title: lesson.title,
+        summary: lesson.summary,
+        objectives: lesson.objectives,
+        status: 'not_started', // not_started | in_progress | mastered
+        lastResult: null, // { score: number, answers: array, timestamp: string }
+        attempts: 0
+      };
+    });
+  });
+  
+  saveSyllabus(syllabus);
+  return syllabus;
+}
+
+function saveSyllabus(syllabus) {
+  syllabus.lastUpdated = new Date().toISOString();
+  localStorage.setItem(SYLLABUS_KEY, JSON.stringify(syllabus));
+}
+
+function updateLessonStatus(lessonId, status, result = null) {
+  const syllabus = loadSyllabus();
+  
+  // Find the lesson in the syllabus structure
+  for (const [unitId, unit] of Object.entries(syllabus.units)) {
+    if (unit.lessons[lessonId]) {
+      unit.lessons[lessonId].status = status;
+      if (result) {
+        unit.lessons[lessonId].lastResult = result;
+        unit.lessons[lessonId].attempts++;
+      }
+      saveSyllabus(syllabus);
+      return;
+    }
+  }
+}
+
 function addMessage(role, content) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
@@ -111,50 +217,69 @@ function renderHistory(history) {
 
 function renderLessons(progress) {
   els.lessonList.innerHTML = '';
-  Object.entries(LESSONS).forEach(([id, info]) => {
-    const li = document.createElement('li');
-    li.className = 'lesson';
-    li.tabIndex = 0;
-    li.setAttribute('data-lesson-id', id);
+  const syllabus = loadSyllabus();
+  
+  Object.entries(syllabus.units).forEach(([unitId, unit]) => {
+    // Create unit header
+    const unitHeader = document.createElement('div');
+    unitHeader.className = 'unit-header';
+    unitHeader.innerHTML = `<h3>${unit.title}</h3>`;
+    els.lessonList.appendChild(unitHeader);
+    
+    // Create lessons for this unit
+    Object.entries(unit.lessons).forEach(([lessonId, lesson]) => {
+      const li = document.createElement('li');
+      li.className = 'lesson';
+      li.tabIndex = 0;
+      li.setAttribute('data-lesson-id', lessonId);
 
-    const title = document.createElement('div');
-    title.className = 'lesson-title';
-    title.textContent = info.title;
+      const title = document.createElement('div');
+      title.className = 'lesson-title';
+      title.textContent = lesson.title;
 
-    const summary = document.createElement('div');
-    summary.className = 'lesson-summary';
-    summary.textContent = info.summary;
+      const summary = document.createElement('div');
+      summary.className = 'lesson-summary';
+      summary.textContent = lesson.summary;
 
-    const status = document.createElement('div');
-    const p = progress[id];
-    const badge = document.createElement('span');
-    badge.className = 'badge';
-    if (p?.done) {
-      badge.textContent = 'Done';
-    } else if (p?.last) {
-      badge.textContent = 'In progress';
-    } else {
-      badge.textContent = 'Not started';
-    }
-    status.appendChild(badge);
+      const status = document.createElement('div');
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      
+      // Use new status system
+      switch(lesson.status) {
+        case 'mastered':
+          badge.textContent = 'Mastered';
+          badge.classList.add('badge-mastered');
+          break;
+        case 'in_progress':
+          badge.textContent = 'In Progress';
+          badge.classList.add('badge-progress');
+          break;
+        default:
+          badge.textContent = 'Not Started';
+          badge.classList.add('badge-not-started');
+      }
+      status.appendChild(badge);
 
-    if (progress[id]?.last) {
-      const last = document.createElement('div');
-      last.className = 'lesson-summary';
-      last.textContent = `Last: ${progress[id].last}`;
-      status.appendChild(last);
-    }
+      // Show quiz results if available
+      if (lesson.lastResult) {
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'lesson-summary';
+        resultDiv.textContent = `Last quiz: ${lesson.lastResult.score}/3 (${new Date(lesson.lastResult.timestamp).toLocaleDateString()})`;
+        status.appendChild(resultDiv);
+      }
 
-    li.appendChild(title);
-    li.appendChild(summary);
-    li.appendChild(status);
+      li.appendChild(title);
+      li.appendChild(summary);
+      li.appendChild(status);
 
-    li.addEventListener('click', () => startLesson(id));
-    li.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') startLesson(id);
+      li.addEventListener('click', () => startLesson(lessonId));
+      li.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') startLesson(lessonId);
+      });
+
+      els.lessonList.appendChild(li);
     });
-
-    els.lessonList.appendChild(li);
   });
 }
 
@@ -199,10 +324,14 @@ async function sendToTutor(text, lessonId, mode = 'normal') {
 }
 
 async function startLesson(lessonId) {
+  // Update both old progress and new syllabus for backward compatibility
   const progress = loadProgress();
   progress[lessonId] = progress[lessonId] || { done: false, last: '' };
   progress[lessonId].last = new Date().toISOString();
   saveProgress(progress);
+  
+  // Update syllabus status
+  updateLessonStatus(lessonId, 'in_progress');
 
   els.currentLesson.textContent = `Current lesson: ${LESSONS[lessonId].title}`;
   els.markDone.style.display = 'inline-block';
@@ -235,11 +364,21 @@ async function startLesson(lessonId) {
 }
 
 function markLessonDone(lessonId) {
+  // Update old progress for backward compatibility  
   const progress = loadProgress();
   if (!progress[lessonId]) progress[lessonId] = { done: false, last: '' };
   progress[lessonId].done = true;
   progress[lessonId].last = new Date().toISOString();
   saveProgress(progress);
+  
+  // Update syllabus - mark as mastered (assuming 3/3 quiz score)
+  const result = {
+    score: 3,
+    answers: ['completed'],
+    timestamp: new Date().toISOString()
+  };
+  updateLessonStatus(lessonId, 'mastered', result);
+  
   renderLessons(progress);
 }
 
@@ -275,6 +414,7 @@ async function onSend(e) {
 function resetAll() {
   sessionStorage.removeItem(HISTORY_KEY);
   localStorage.removeItem(PROGRESS_KEY);
+  localStorage.removeItem(SYLLABUS_KEY); // Clear syllabus data too
   els.messages.innerHTML = '';
   els.currentLesson.textContent = '';
   els.markDone.style.display = 'none';
@@ -309,31 +449,35 @@ async function createPracticeFile() {
   switch(lessonId) {
     case 'orientation':
       csvData = 'Item,Quantity\nApples,12\nBananas,8\nOranges,15\nGrapes,20';
-      filename = 'Lesson1_Orientation_Practice.csv';
+      filename = 'UnitA_Orientation_Practice.csv';
       break;
-    case 'data':
+    case 'navigation':
       csvData = 'Name,Age,City\nJohn Smith,45,Seattle\nMary Johnson,52,Portland\nBob Wilson,38,Vancouver\nSusan Davis,41,Spokane';
-      filename = 'Lesson2_Data_Entry_Practice.csv';
+      filename = 'UnitA_Navigation_Practice.csv';
       break;
     case 'formatting':
       csvData = 'Product,Price,In Stock\nLaptop,899.99,Yes\nMouse,29.99,No\nKeyboard,79.99,Yes\nMonitor,299.99,Yes';
-      filename = 'Lesson3_Formatting_Practice.csv';
+      filename = 'UnitA_Formatting_Practice.csv';
       break;
-    case 'formulas':
+    case 'formulas1':
       csvData = 'Month,Sales\nJanuary,1250\nFebruary,1380\nMarch,1195\nApril,1425\nMay,1340';
-      filename = 'Lesson4_SUM_Average_Practice.csv';
+      filename = 'UnitB_Formulas1_Practice.csv';
+      break;
+    case 'autofill':
+      csvData = 'Week,Orders\nWeek 1,45\nWeek 2,52\nWeek 3,48\nWeek 4,61\nWeek 5,55';
+      filename = 'UnitB_Autofill_Practice.csv';
       break;
     case 'sortfilter':
       csvData = 'Employee,Department,Salary\nAlice Brown,Marketing,52000\nBob Smith,Sales,48000\nCarol Jones,Marketing,55000\nDave Wilson,Sales,51000\nEve Davis,IT,58000';
-      filename = 'Lesson5_Sort_Filter_Practice.csv';
+      filename = 'UnitB_Sort_Filter_Practice.csv';
       break;
     case 'charts':
       csvData = 'Quarter,Revenue\nQ1,25000\nQ2,32000\nQ3,28000\nQ4,35000';
-      filename = 'Lesson6_Charts_Practice.csv';
+      filename = 'UnitC_Charts_Practice.csv';
       break;
     case 'printing':
       csvData = 'Item,Jan,Feb,Mar,Total\nOffice Supplies,450,520,480,1450\nSoftware,1200,1100,1350,3650\nHardware,800,920,760,2480';
-      filename = 'Lesson7_Printing_Practice.csv';
+      filename = 'UnitC_Printing_Practice.csv';
       break;
     default:
       csvData = 'Name,Value\nSample 1,100\nSample 2,200\nSample 3,150';

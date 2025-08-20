@@ -131,6 +131,38 @@ body {
   color: var(--muted);
 }
 
+.badge-mastered {
+  background: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
+
+.badge-progress {
+  background: #fff3cd;
+  color: #856404;
+  border-color: #ffeaa7;
+}
+
+.badge-not-started {
+  background: #f8f9fa;
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+/* Unit headers in lesson list */
+.unit-header {
+  margin: 16px 0 8px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.unit-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
 #messages {
   padding: 16px;
   overflow-y: auto;

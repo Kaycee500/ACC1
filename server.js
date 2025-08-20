@@ -28,42 +28,47 @@ const SYSTEM_PROMPT = `You are **Dad's Excel Tutor**, a calm, patient teacher fo
    **Excel level:** true beginner.
    **Improvement loop:** When the user struggles or asks for more, (a) simplify and repeat, (b) show a small example with **exact** values, (c) add a follow-up practice file, and (d) propose a revised mini-syllabus for the next steps.`;
 
-// Lesson seed prompts
+// Lesson seed prompts (from section 8 of requirements)
 const LESSONS = {
   orientation: {
-    title: 'Excel Orientation',
-    summary: 'Workbooks vs. worksheets, rows, columns, cells, and the Ribbon.',
-    seed: 'Teach the very first Excel lesson on Windows. Explain workbook, worksheet, rows, columns, cells, and the Ribbon. Include a 5-step hands-on practice and then a 3-question quiz.'
+    title: 'Orientation',
+    summary: 'Workbook vs. worksheet; rows/columns/cells; the Ribbon; saving a file.',
+    seed: 'Teach the very first Excel lesson on Windows. Explain workbook, worksheet, rows, columns, cells, the Ribbon, and saving a file. Include a 5-step hands-on practice and a 3-question quiz.'
   },
-  data: {
-    title: 'Entering & Saving Data',
-    summary: 'Type text and numbers, move around, and save a workbook.',
-    seed: 'Teach how to enter text and numbers, move with arrow keys, and save a workbook on Windows. Include a small practice table and a 3-question quiz.'
+  navigation: {
+    title: 'Navigation & Entry',
+    summary: 'Moving with arrow keys, selecting cells, typing text/numbers, and saving with a clear file name.',
+    seed: 'Teach moving with arrow keys, selecting cells, typing text/numbers, and saving with a clear file name. Include a tiny practice table and a 3-question quiz.'
   },
   formatting: {
     title: 'Formatting Basics',
-    summary: 'Bold, borders, resize columns/rows, number formats.',
-    seed: 'Teach bold text, borders, column width, row height, and number formats in Excel on Windows. Include a guided practice and a 3-question quiz.'
+    summary: 'Bold, borders, column width, row height, and number formats.',
+    seed: 'Teach bold, borders, column width, row height, and number formats. Include an exact mini-table and a 3-question quiz.'
   },
-  formulas: {
-    title: 'Simple Formulas',
+  formulas1: {
+    title: 'Formulas 1',
     summary: '=SUM and =AVERAGE with exact keystrokes.',
-    seed: 'Teach =SUM and =AVERAGE with exact keystrokes for Windows. Provide a tiny data set, have me compute totals and averages, then a 3-question quiz.'
+    seed: 'Teach `=SUM` and `=AVERAGE` with exact keystrokes. Provide a tiny dataset, compute totals/averages, then a 3-question quiz.'
+  },
+  autofill: {
+    title: 'Autofill & Copy',
+    summary: 'Autofill handle, relative references, and safe copying of formulas.',
+    seed: 'Teach Autofill handle, relative references, and safe copying of formulas. Include a small table and a 3-question quiz.'
   },
   sortfilter: {
     title: 'Sort & Filter',
     summary: 'Turn on Filter, sort A→Z, filter by value.',
-    seed: 'Teach how to enable Filter, sort A→Z, and filter by a value in Excel on Windows. Include a tiny sample table and a 3-question quiz.'
+    seed: 'Teach turning on Filter, sorting A→Z, and filtering by value. Include a small sample and a 3-question quiz.'
   },
   charts: {
-    title: 'Intro to Charts',
-    summary: 'Insert a column chart from a small table.',
-    seed: 'Teach how to insert a simple column chart from a small table in Excel on Windows. Provide a practice table and a 3-question quiz.'
+    title: 'Intro Charts',
+    summary: 'Insert a Column chart from a 2-column table.',
+    seed: 'Teach inserting a Column chart from a 2-column table. Provide the sample data and a 3-question quiz.'
   },
   printing: {
-    title: 'Printing Basics',
-    summary: 'Print preview and fit to one page.',
-    seed: 'Teach print preview, page orientation, margins, and fit to one page in Excel on Windows. Include a 3-question quiz.'
+    title: 'Printing',
+    summary: 'Print Preview, orientation, margins, and \'Fit Sheet on One Page\'.',
+    seed: 'Teach Print Preview, orientation, margins, and \'Fit Sheet on One Page\'. Include a 3-question quiz.'
   }
 };
 
