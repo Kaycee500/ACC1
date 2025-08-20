@@ -95,7 +95,7 @@ app.post('/chat', async (req, res) => {
   const input = messages.map(m => ({
       role: m.role,
       content: [
-    { type: 'input_text', text: String(m.content) }
+    { type: 'text', text: String(m.content) }
       ]
     }));
 
@@ -109,14 +109,48 @@ app.post('/chat', async (req, res) => {
       body: JSON.stringify({
         model,
         input,
+        response_format: { type: 'text' },
         // Encourage numbered steps and clarity
         temperature: 0.3
       })
     });
 
     if (!response.ok) {
-      const errText = await response.text().catch(() => '');
-      return res.status(response.status).json({ error: errText || 'Upstream error' });
+      let detail = 'Upstream error';
+      try {
+        const j = await response.json();
+        detail = j?.error?.message || j?.message || JSON.stringify(j);
+      } catch {
+        detail = await response.text().catch(() => 'Upstream error');
+      }
+      console.error('OpenAI Responses error:', response.status, detail);
+      // Fallback to Chat Completions for resilience
+      try {
+        const chatResp = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model,
+            messages: messages.map(m => ({ role: m.role, content: String(m.content) })),
+            temperature: 0.3
+          })
+        });
+        if (chatResp.ok) {
+          const j = await chatResp.json();
+          const reply = j?.choices?.[0]?.message?.content || 'I could not get a response just now. Please try again.';
+          return res.json({ reply });
+        } else {
+          const t = await chatResp.text();
+          console.error('OpenAI Chat Completions error:', chatResp.status, t);
+          return res.status(response.status).json({ error: detail || 'Upstream error' });
+        }
+      } catch (e) {
+        console.error('Fallback call failed:', e?.message || e);
+        return res.status(response.status).json({ error: detail || 'Upstream error' });
+      }
     }
 
     const data = await response.json();
@@ -130,9 +164,7 @@ app.post('/chat', async (req, res) => {
       for (const item of data.output) {
         if (Array.isArray(item?.content)) {
           for (const c of item.content) {
-            if (c?.type === 'output_text' && typeof c?.text === 'string') {
-              chunks.push(c.text);
-            } else if (c?.type === 'text' && typeof c?.text === 'string') {
+            if ((c?.type === 'output_text' || c?.type === 'text') && typeof c?.text === 'string') {
               chunks.push(c.text);
             }
           }
@@ -165,4 +197,9 @@ app.listen(PORT, () => {
 // Optional: expose lessons metadata (no secrets)
 app.get('/lessons.json', (req, res) => {
   res.json(Object.fromEntries(Object.entries(LESSONS).map(([k, v]) => [k, { title: v.title, summary: v.summary }])));
+});
+
+// Simple health endpoint
+app.get('/health', (req, res) => {
+  res.json({ ok: true });
 });
