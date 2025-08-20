@@ -185,6 +185,7 @@ app.post('/chat', async (req, res) => {
 
     res.json({ reply });
   } catch (err) {
+    console.error('Chat endpoint error:', err?.message || err);
     res.status(500).json({ error: 'Server error.' });
   }
 });

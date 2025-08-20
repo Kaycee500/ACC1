@@ -176,8 +176,13 @@ async function sendToTutor(text, lessonId) {
   setTyping(false);
 
   if (!res.ok) {
-    const err = await res.text().catch(() => '');
-    return { error: err || 'Request failed' };
+    try {
+      const errorData = await res.json();
+      return { error: errorData.error || 'Request failed' };
+    } catch {
+      const err = await res.text().catch(() => '');
+      return { error: err || 'Request failed' };
+    }
   }
   return res.json();
 }
@@ -205,8 +210,11 @@ async function startLesson(lessonId) {
   const { reply, error } = await sendToTutor(seed);
   disableSend(false);
   if (error) {
-    toast('Sorry, I could not reach the tutor. Please try again.');
-    addMessage('assistant', 'Sorry, I could not reach the tutor. Please try again.');
+    const errorMsg = error.includes('OPENAI_API_KEY') 
+      ? 'OpenAI API key is missing or invalid. Please check your environment settings.'
+      : 'Sorry, I could not reach the tutor. Please try again.';
+    toast(errorMsg);
+    addMessage('assistant', errorMsg);
     return;
   }
   addMessage('assistant', reply);
@@ -240,8 +248,11 @@ async function onSend(e) {
   const { reply, error } = await sendToTutor(text);
   disableSend(false);
   if (error) {
-    toast('Sorry, I could not reach the tutor. Please try again.');
-    addMessage('assistant', 'Sorry, I could not reach the tutor. Please try again.');
+    const errorMsg = error.includes('OPENAI_API_KEY') 
+      ? 'OpenAI API key is missing or invalid. Please check your environment settings.'
+      : 'Sorry, I could not reach the tutor. Please try again.';
+    toast(errorMsg);
+    addMessage('assistant', errorMsg);
     return;
   }
   addMessage('assistant', reply);
