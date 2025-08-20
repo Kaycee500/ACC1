@@ -89,7 +89,8 @@ app.post('/chat', async (req, res) => {
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'Server is missing OPENAI_API_KEY.' });
+      console.error('OPENAI_API_KEY not found in environment variables');
+      return res.status(500).json({ error: 'Server is missing OPENAI_API_KEY. Please add it to your Replit secrets.' });
     }
 
     // Model can be switched by changing this one line
