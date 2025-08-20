@@ -101,17 +101,299 @@ const els = {
   createPracticeFile: document.getElementById('createPracticeFile'),
   showExample: document.getElementById('showExample'),
   cheatSheet: document.getElementById('cheatSheet'),
+  takeQuiz: document.getElementById('takeQuiz'),
   retryEasier: document.getElementById('retryEasier'),
   advanceTopic: document.getElementById('advanceTopic'),
   improveSyllabus: document.getElementById('improveSyllabus'),
   // Modal elements
   cheatSheetModal: document.getElementById('cheatSheetModal'),
-  closeCheatSheet: document.getElementById('closeCheatSheet')
+  closeCheatSheet: document.getElementById('closeCheatSheet'),
+  // Quiz elements
+  quizModal: document.getElementById('quizModal'),
+  quizTitle: document.getElementById('quizTitle'),
+  quizContent: document.getElementById('quizContent'),
+  quizQuestions: document.getElementById('quizQuestions'),
+  quizResults: document.getElementById('quizResults'),
+  quizScore: document.getElementById('quizScore'),
+  quizFeedback: document.getElementById('quizFeedback'),
+  submitQuiz: document.getElementById('submitQuiz'),
+  cancelQuiz: document.getElementById('cancelQuiz'),
+  retakeQuiz: document.getElementById('retakeQuiz'),
+  continueFromQuiz: document.getElementById('continueFromQuiz'),
+  closeQuiz: document.getElementById('closeQuiz')
 };
 
 const HISTORY_KEY = 'history';
 const PROGRESS_KEY = 'dadTutorProgress'; // Keep for backward compatibility
 const SYLLABUS_KEY = 'dadTutorSyllabusV1';
+
+// Quiz definitions for each lesson (2 MCQ + 1 Action Task)
+const QUIZZES = {
+  orientation: {
+    title: "Orientation Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "What is the difference between a workbook and a worksheet?",
+        options: [
+          "A workbook is a single sheet, a worksheet is multiple sheets",
+          "A workbook contains one or more worksheets",
+          "There is no difference, they are the same thing",
+          "A worksheet contains workbooks"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq", 
+        question: "Where do you find formatting tools like Bold and Font Size?",
+        options: [
+          "In the File tab",
+          "In the Insert tab", 
+          "In the Home tab",
+          "In the Data tab"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "What keyboard shortcut do you press to save a file?",
+        placeholder: "Type the exact keyboard shortcut (example: Ctrl+A)",
+        correct: "Ctrl+S"
+      }
+    ]
+  },
+  navigation: {
+    title: "Navigation & Entry Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "Which key moves you to the cell directly below?",
+        options: [
+          "Tab key",
+          "Enter key",
+          "Space key", 
+          "Shift key"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq",
+        question: "Which key moves you to the cell to the right?",
+        options: [
+          "Enter key",
+          "Arrow Down key",
+          "Tab key",
+          "Ctrl key"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "If you want to save your work with a new name, which menu do you click first?",
+        placeholder: "Type the exact tab name",
+        correct: "File"
+      }
+    ]
+  },
+  formatting: {
+    title: "Formatting Basics Quiz", 
+    questions: [
+      {
+        type: "mcq",
+        question: "To make text bold in Excel, you click the Bold button in which tab?",
+        options: [
+          "Insert tab",
+          "Home tab",
+          "Data tab",
+          "Review tab"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq",
+        question: "To add borders around cells, you use which feature?",
+        options: [
+          "Font Color",
+          "Cell Styles",
+          "Borders button",
+          "Format Painter"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "What do you drag to make a column wider?",
+        placeholder: "Type what you drag (be specific)",
+        correct: "column border"
+      }
+    ]
+  },
+  formulas1: {
+    title: "Formulas 1 Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "Every formula in Excel must start with which character?",
+        options: [
+          "$ (dollar sign)",
+          "= (equals sign)",
+          "@ (at symbol)",
+          "+ (plus sign)"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq",
+        question: "To add numbers in cells A1 through A5, which formula is correct?",
+        options: [
+          "=ADD(A1:A5)",
+          "=SUM(A1-A5)",
+          "=SUM(A1:A5)",
+          "=TOTAL(A1:A5)"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "Type the exact formula to calculate the average of cells B1 through B4:",
+        placeholder: "=FUNCTION(range)",
+        correct: "=AVERAGE(B1:B4)"
+      }
+    ]
+  },
+  autofill: {
+    title: "Autofill & Relative References Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "The small square in the bottom-right corner of a selected cell is called:",
+        options: [
+          "Fill handle",
+          "Corner tab",
+          "Drag square",
+          "Copy corner"
+        ],
+        correct: 0
+      },
+      {
+        type: "mcq",
+        question: "When you copy a formula, Excel automatically adjusts cell references. This is called:",
+        options: [
+          "Absolute references",
+          "Fixed references", 
+          "Relative references",
+          "Dynamic references"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "What do you drag to copy a formula down to multiple cells?",
+        placeholder: "Type the name of what you drag",
+        correct: "fill handle"
+      }
+    ]
+  },
+  sortfilter: {
+    title: "Sort & Filter Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "To enable filtering on your data, you go to which tab?",
+        options: [
+          "Home tab",
+          "Insert tab",
+          "Data tab", 
+          "Review tab"
+        ],
+        correct: 2
+      },
+      {
+        type: "mcq",
+        question: "After clicking Filter, what appears next to your column headers?",
+        options: [
+          "Sort buttons",
+          "Drop-down arrows",
+          "Filter boxes",
+          "Menu bars"
+        ],
+        correct: 1
+      },
+      {
+        type: "action",
+        question: "To sort data A to Z (alphabetically), which button do you click in the Data tab?",
+        placeholder: "Type the button name",
+        correct: "Sort A to Z"
+      }
+    ]
+  },
+  charts: {
+    title: "Intro Charts Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "To insert a chart, you first select your data, then go to which tab?",
+        options: [
+          "Home tab",
+          "Insert tab",
+          "Data tab",
+          "Design tab"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq",
+        question: "A Column chart is best for showing:",
+        options: [
+          "Percentages of a whole",
+          "Trends over time",
+          "Comparing values across categories",
+          "Geographic data"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "Before creating a chart, what must you do first?",
+        placeholder: "Type the first step",
+        correct: "select the data"
+      }
+    ]
+  },
+  printing: {
+    title: "Printing Basics Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "To see how your worksheet will look when printed, you use:",
+        options: [
+          "Print Preview",
+          "Page Layout",
+          "Normal View",
+          "Draft Mode"
+        ],
+        correct: 0
+      },
+      {
+        type: "mcq",
+        question: "To make your worksheet fit on one page, you select:",
+        options: [
+          "Shrink to Fit",
+          "Fit Sheet on One Page",
+          "Scale to Page",
+          "Auto Fit"
+        ],
+        correct: 1
+      },
+      {
+        type: "action",
+        question: "What keyboard shortcut opens the Print dialog?",
+        placeholder: "Type the exact shortcut",
+        correct: "Ctrl+P"
+      }
+    ]
+  }
+};
 
 function loadHistory() {
   try {
@@ -509,6 +791,17 @@ async function showExample() {
   await sendMessageToTutor(examplePrompt, 'normal');
 }
 
+function takeQuiz() {
+  const activeLesson = document.querySelector('.lesson.active');
+  if (!activeLesson) {
+    toast('Please select a lesson first');
+    return;
+  }
+  
+  const lessonId = activeLesson.getAttribute('data-lesson-id');
+  startQuiz(lessonId);
+}
+
 async function retryEasier() {
   const retryPrompt = `The learner is struggling with the current topic. Please provide an easier explanation, simplify the steps, and show a very small example with exact numbers. Break it down into smaller pieces.`;
   
@@ -558,6 +851,205 @@ async function sendMessageToTutor(prompt, mode = 'normal') {
   saveHistory(updated);
 }
 
+// Quiz System Functions
+let currentQuiz = null;
+let currentLessonId = null;
+
+function startQuiz(lessonId) {
+  const quiz = QUIZZES[lessonId];
+  if (!quiz) {
+    toast('No quiz available for this lesson');
+    return;
+  }
+  
+  currentQuiz = quiz;
+  currentLessonId = lessonId;
+  
+  els.quizTitle.textContent = quiz.title;
+  renderQuizQuestions(quiz.questions);
+  
+  // Show quiz, hide results
+  els.quizContent.style.display = 'block';
+  els.quizResults.style.display = 'none';
+  els.quizModal.style.display = 'block';
+}
+
+function renderQuizQuestions(questions) {
+  els.quizQuestions.innerHTML = '';
+  
+  questions.forEach((question, index) => {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'quiz-question';
+    
+    const questionTitle = document.createElement('h4');
+    questionTitle.textContent = `${index + 1}. ${question.question}`;
+    questionDiv.appendChild(questionTitle);
+    
+    if (question.type === 'mcq') {
+      const optionsDiv = document.createElement('div');
+      optionsDiv.className = 'quiz-options';
+      
+      question.options.forEach((option, optionIndex) => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'quiz-option';
+        
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = `question_${index}`;
+        radio.value = optionIndex;
+        radio.id = `q${index}_o${optionIndex}`;
+        
+        const label = document.createElement('label');
+        label.htmlFor = radio.id;
+        label.textContent = option;
+        
+        optionDiv.appendChild(radio);
+        optionDiv.appendChild(label);
+        optionsDiv.appendChild(optionDiv);
+      });
+      
+      questionDiv.appendChild(optionsDiv);
+    } else if (question.type === 'action') {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'quiz-input';
+      input.placeholder = question.placeholder;
+      input.name = `question_${index}`;
+      questionDiv.appendChild(input);
+    }
+    
+    els.quizQuestions.appendChild(questionDiv);
+  });
+}
+
+function submitQuiz() {
+  if (!currentQuiz) return;
+  
+  const answers = [];
+  let allAnswered = true;
+  
+  currentQuiz.questions.forEach((question, index) => {
+    if (question.type === 'mcq') {
+      const selectedRadio = document.querySelector(`input[name="question_${index}"]:checked`);
+      if (selectedRadio) {
+        answers.push(parseInt(selectedRadio.value));
+      } else {
+        allAnswered = false;
+        answers.push(null);
+      }
+    } else if (question.type === 'action') {
+      const input = document.querySelector(`input[name="question_${index}"]`);
+      if (input && input.value.trim()) {
+        answers.push(input.value.trim());
+      } else {
+        allAnswered = false;
+        answers.push('');
+      }
+    }
+  });
+  
+  if (!allAnswered) {
+    toast('Please answer all questions before submitting');
+    return;
+  }
+  
+  gradeQuiz(answers);
+}
+
+function gradeQuiz(answers) {
+  let score = 0;
+  const feedback = [];
+  
+  currentQuiz.questions.forEach((question, index) => {
+    const userAnswer = answers[index];
+    const isCorrect = checkAnswer(question, userAnswer);
+    
+    if (isCorrect) {
+      score++;
+      feedback.push(`Question ${index + 1}: ✓ Correct`);
+    } else {
+      if (question.type === 'mcq') {
+        feedback.push(`Question ${index + 1}: ✗ Incorrect. The correct answer was: ${question.options[question.correct]}`);
+      } else {
+        feedback.push(`Question ${index + 1}: ✗ Incorrect. The correct answer was: ${question.correct}`);
+      }
+    }
+  });
+  
+  // Store quiz result
+  const result = {
+    score: score,
+    answers: answers,
+    timestamp: new Date().toISOString()
+  };
+  
+  // Update lesson status based on score
+  const status = score === 3 ? 'mastered' : 'in_progress';
+  updateLessonStatus(currentLessonId, status, result);
+  
+  // Update old progress system too
+  const progress = loadProgress();
+  if (!progress[currentLessonId]) progress[currentLessonId] = { done: false, last: '' };
+  progress[currentLessonId].done = score === 3;
+  progress[currentLessonId].last = new Date().toISOString();
+  saveProgress(progress);
+  
+  // Show results
+  showQuizResults(score, feedback);
+  
+  // Update lesson display
+  renderLessons(progress);
+}
+
+function checkAnswer(question, userAnswer) {
+  if (question.type === 'mcq') {
+    return userAnswer === question.correct;
+  } else if (question.type === 'action') {
+    // Normalize answers for comparison (case insensitive, trim whitespace)
+    const correct = question.correct.toLowerCase().trim();
+    const user = userAnswer.toLowerCase().trim();
+    return user === correct;
+  }
+  return false;
+}
+
+function showQuizResults(score, feedback) {
+  els.quizContent.style.display = 'none';
+  els.quizResults.style.display = 'block';
+  
+  // Set score display
+  els.quizScore.textContent = `Score: ${score}/3`;
+  if (score === 3) {
+    els.quizScore.className = 'quiz-score-perfect';
+  } else if (score === 2) {
+    els.quizScore.className = 'quiz-score-good';
+  } else {
+    els.quizScore.className = 'quiz-score-needs-work';
+  }
+  
+  // Set feedback
+  els.quizFeedback.innerHTML = feedback.map(f => `<p>${f}</p>`).join('');
+  
+  // Show appropriate message
+  if (score === 3) {
+    addMessage('assistant', `🎉 Excellent! You scored ${score}/3 on the ${currentQuiz.title}. This lesson is now marked as mastered!`);
+  } else {
+    addMessage('assistant', `You scored ${score}/3 on the ${currentQuiz.title}. Review the feedback and try again when you're ready.`);
+  }
+}
+
+function closeQuiz() {
+  els.quizModal.style.display = 'none';
+  currentQuiz = null;
+  currentLessonId = null;
+}
+
+function retakeQuiz() {
+  if (currentLessonId) {
+    startQuiz(currentLessonId);
+  }
+}
+
 function init() {
   renderLessons(loadProgress());
   setInitialMessage();
@@ -569,6 +1061,7 @@ function init() {
   els.createPracticeFile.addEventListener('click', createPracticeFile);
   els.showExample.addEventListener('click', showExample);
   els.cheatSheet.addEventListener('click', showCheatSheet);
+  els.takeQuiz.addEventListener('click', takeQuiz);
   els.retryEasier.addEventListener('click', retryEasier);
   els.advanceTopic.addEventListener('click', advanceTopic);
   els.improveSyllabus.addEventListener('click', improveSyllabus);
@@ -577,6 +1070,16 @@ function init() {
   els.closeCheatSheet.addEventListener('click', hideCheatSheet);
   els.cheatSheetModal.addEventListener('click', (e) => {
     if (e.target === els.cheatSheetModal) hideCheatSheet();
+  });
+  
+  // Quiz event listeners
+  els.submitQuiz.addEventListener('click', submitQuiz);
+  els.cancelQuiz.addEventListener('click', closeQuiz);
+  els.retakeQuiz.addEventListener('click', retakeQuiz);
+  els.continueFromQuiz.addEventListener('click', closeQuiz);
+  els.closeQuiz.addEventListener('click', closeQuiz);
+  els.quizModal.addEventListener('click', (e) => {
+    if (e.target === els.quizModal) closeQuiz();
   });
 }
 

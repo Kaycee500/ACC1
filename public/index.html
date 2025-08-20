@@ -34,6 +34,7 @@
         <button id="createPracticeFile" class="tool-btn">Create Practice File</button>
         <button id="showExample" class="tool-btn">Show Example</button>
         <button id="cheatSheet" class="tool-btn">Cheat Sheet</button>
+        <button id="takeQuiz" class="tool-btn">Take Quiz</button>
         <button id="retryEasier" class="tool-btn">Retry Easier</button>
         <button id="advanceTopic" class="tool-btn">Advance Topic</button>
         <button id="improveSyllabus" class="tool-btn">Improve Syllabus</button>
@@ -44,6 +45,32 @@
         <button id="send" type="submit">Send</button>
       </form>
     </main>
+  </div>
+  
+  <!-- Quiz Modal -->
+  <div id="quizModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="quizTitle">Lesson Quiz</h2>
+        <button class="modal-close" id="closeQuiz">&times;</button>
+      </div>
+      <div id="quizContent">
+        <div id="quizQuestions">
+          <!-- Questions will be inserted here -->
+        </div>
+        <div id="quizActions">
+          <button id="submitQuiz" class="tool-btn">Submit Quiz</button>
+          <button id="cancelQuiz" class="tool-btn">Cancel</button>
+        </div>
+      </div>
+      <div id="quizResults" style="display: none;">
+        <h3>Quiz Results</h3>
+        <div id="quizScore"></div>
+        <div id="quizFeedback"></div>
+        <button id="retakeQuiz" class="tool-btn">Retake Quiz</button>
+        <button id="continueFromQuiz" class="tool-btn">Continue</button>
+      </div>
+    </div>
   </div>
   
   <!-- Cheat Sheet Modal -->
