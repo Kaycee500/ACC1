@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dad's Excel Tutor</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <h1>Lessons</h1>
+        <button id="resetProgress" title="Clear your progress and chat">Reset Progress</button>
+      </div>
+      <ul id="lessonList" aria-label="Excel lesson modules">
+        <!-- Filled by app.js -->
+      </ul>
+    </aside>
+
+    <main id="main">
+      <header>
+        <h1>Dad's Excel Tutor</h1>
+        <div class="header-right">
+          <div id="currentLesson" aria-live="polite"></div>
+          <button id="markDone" style="display:none;">Mark Done</button>
+        </div>
+      </header>
+      <section id="messages" aria-live="polite" aria-label="Chat messages">
+        <!-- Chat messages inserted here -->
+      </section>
+      <form id="composer" autocomplete="off">
+        <label class="sr-only" for="input">Type your message</label>
+        <textarea id="input" rows="3" placeholder="Type here…"></textarea>
+        <button id="send" type="submit">Send</button>
+      </form>
+    </main>
+  </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
