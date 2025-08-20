@@ -36,6 +36,8 @@ A simple AI-powered Excel tutor designed for beginners, specifically targeting W
    ```
    
    Get your API key from: https://platform.openai.com/api-keys
+   
+   **Note:** The `.env` file is automatically loaded by the application using dotenv. Make sure your API key is valid and has sufficient credits.
 
 4. **Start the application**
    ```bash

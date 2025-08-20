@@ -1,4 +1,8 @@
 import express from 'express';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 // Use Node 18+ global fetch
 const app = express();
@@ -91,16 +95,8 @@ app.post('/chat', async (req, res) => {
     // Model can be switched by changing this one line
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'; // change to 'gpt-4o' if desired
 
-    // Prepare messages for Responses API (structured content)
-  const input = messages.map(m => ({
-      role: m.role,
-      content: [
-    { type: 'text', text: String(m.content) }
-      ]
-    }));
-
-    // Call OpenAI Responses API
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    // Call OpenAI Chat Completions API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -108,9 +104,7 @@ app.post('/chat', async (req, res) => {
       },
       body: JSON.stringify({
         model,
-        input,
-        response_format: { type: 'text' },
-        // Encourage numbered steps and clarity
+        messages: messages.map(m => ({ role: m.role, content: String(m.content) })),
         temperature: 0.3
       })
     });
@@ -123,65 +117,12 @@ app.post('/chat', async (req, res) => {
       } catch {
         detail = await response.text().catch(() => 'Upstream error');
       }
-      console.error('OpenAI Responses error:', response.status, detail);
-      // Fallback to Chat Completions for resilience
-      try {
-        const chatResp = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model,
-            messages: messages.map(m => ({ role: m.role, content: String(m.content) })),
-            temperature: 0.3
-          })
-        });
-        if (chatResp.ok) {
-          const j = await chatResp.json();
-          const reply = j?.choices?.[0]?.message?.content || 'I could not get a response just now. Please try again.';
-          return res.json({ reply });
-        } else {
-          const t = await chatResp.text();
-          console.error('OpenAI Chat Completions error:', chatResp.status, t);
-          return res.status(response.status).json({ error: detail || 'Upstream error' });
-        }
-      } catch (e) {
-        console.error('Fallback call failed:', e?.message || e);
-        return res.status(response.status).json({ error: detail || 'Upstream error' });
-      }
+      console.error('OpenAI Chat Completions error:', response.status, detail);
+      return res.status(response.status).json({ error: detail || 'Upstream error' });
     }
 
     const data = await response.json();
-    // The Responses API often provides output_text; otherwise inspect output array
-    let reply = '';
-    if (typeof data.output_text === 'string' && data.output_text.trim()) {
-      reply = data.output_text;
-    }
-    if (!reply && Array.isArray(data.output)) {
-      const chunks = [];
-      for (const item of data.output) {
-        if (Array.isArray(item?.content)) {
-          for (const c of item.content) {
-            if ((c?.type === 'output_text' || c?.type === 'text') && typeof c?.text === 'string') {
-              chunks.push(c.text);
-            }
-          }
-        } else if (typeof item?.content === 'string') {
-          chunks.push(item.content);
-        }
-      }
-      reply = chunks.join('\n').trim();
-    }
-    // Fallback for compatibility
-    if (!reply && Array.isArray(data.choices) && data.choices[0]?.message?.content) {
-      reply = data.choices[0].message.content;
-    }
-
-    if (!reply) {
-      reply = 'I could not get a response just now. Please try again.';
-    }
+    const reply = data?.choices?.[0]?.message?.content || 'I could not get a response just now. Please try again.';
 
     res.json({ reply });
   } catch (err) {
