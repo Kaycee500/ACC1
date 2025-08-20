@@ -6,43 +6,87 @@
 // - Local progress in localStorage under 'dadTutorProgress'
 // - Reset Progress button clears both
 
-const LESSONS = {
-  orientation: {
-    title: 'Excel Orientation',
-    summary: 'Workbooks vs. worksheets, rows, columns, cells, and the Ribbon.',
-  seed: 'Teach the very first Excel lesson on Windows. Explain workbook, worksheet, rows, columns, cells, and the Ribbon. Include a 5-step hands-on practice and then a 3-question quiz.'
-  },
-  data: {
-    title: 'Entering & Saving Data',
-    summary: 'Type text and numbers, move around, and save a workbook.',
-  seed: 'Teach how to enter text and numbers, move with arrow keys, and save a workbook on Windows. Include a small practice table and a 3-question quiz.'
-  },
-  formatting: {
-    title: 'Formatting Basics',
-    summary: 'Bold, borders, resize columns/rows, number formats.',
-  seed: 'Teach bold text, borders, column width, row height, and number formats in Excel on Windows. Include a guided practice and a 3-question quiz.'
-  },
-  formulas: {
-    title: 'Simple Formulas',
-    summary: '=SUM and =AVERAGE with exact keystrokes.',
-  seed: 'Teach =SUM and =AVERAGE with exact keystrokes for Windows. Provide a tiny data set, have me compute totals and averages, then a 3-question quiz.'
-  },
-  sortfilter: {
-    title: 'Sort & Filter',
-    summary: 'Turn on Filter, sort A→Z, filter by value.',
-  seed: 'Teach how to enable Filter, sort A→Z, and filter by a value in Excel on Windows. Include a tiny sample table and a 3-question quiz.'
-  },
-  charts: {
-    title: 'Intro to Charts',
-    summary: 'Insert a column chart from a small table.',
-  seed: 'Teach how to insert a simple column chart from a small table in Excel on Windows. Provide a practice table and a 3-question quiz.'
-  },
-  printing: {
-    title: 'Printing Basics',
-    summary: 'Print preview and fit to one page.',
-  seed: 'Teach print preview, page orientation, margins, and fit to one page in Excel on Windows. Include a 3-question quiz.'
-  },
+// Adaptive Syllabus Structure (from section 4 of requirements)
+const SYLLABUS = {
+  units: {
+    A: {
+      title: "Unit A — Foundations",
+      lessons: {
+        orientation: {
+          title: 'Orientation',
+          summary: 'Workbook vs. worksheet; rows/columns/cells; the Ribbon; saving a file.',
+          objectives: ['Understand workbook vs worksheet', 'Navigate rows/columns/cells', 'Use the Ribbon interface', 'Save a file properly'],
+          seed: 'Teach the very first Excel lesson on Windows. Explain workbook, worksheet, rows, columns, cells, the Ribbon, and saving a file. Include a 5-step hands-on practice and then a 3-question quiz.'
+        },
+        navigation: {
+          title: 'Navigation & selection',
+          summary: 'Entering text/numbers; basic file management.',
+          objectives: ['Move with arrow keys', 'Select cells', 'Enter text and numbers', 'Basic file management'],
+          seed: 'Teach moving with arrow keys, selecting cells, typing text/numbers, and saving with a clear file name. Include a tiny practice table and a 3-question quiz.'
+        },
+        formatting: {
+          title: 'Formatting basics',
+          summary: 'Bold, borders, column width, row height, number formats.',
+          objectives: ['Apply bold formatting', 'Add borders', 'Adjust column width and row height', 'Set number formats'],
+          seed: 'Teach bold, borders, column width, row height, and number formats. Include an exact mini-table and a 3-question quiz.'
+        }
+      }
+    },
+    B: {
+      title: "Unit B — Core Skills",
+      lessons: {
+        formulas1: {
+          title: 'Formulas 1',
+          summary: '=SUM, =AVERAGE (exact keystrokes).',
+          objectives: ['Enter =SUM formula with exact keystrokes', 'Enter =AVERAGE formula', 'Work with cell ranges', 'Understand basic formula structure'],
+          seed: 'Teach `=SUM` and `=AVERAGE` with exact keystrokes. Provide a tiny dataset, compute totals/averages, then a 3-question quiz.'
+        },
+        autofill: {
+          title: 'Autofill & relative references',
+          summary: 'Copying formulas safely.',
+          objectives: ['Use Autofill handle', 'Understand relative references', 'Copy formulas safely', 'Recognize formula patterns'],
+          seed: 'Teach Autofill handle, relative references, and safe copying of formulas. Include a small table and a 3-question quiz.'
+        },
+        sortfilter: {
+          title: 'Sort & Filter',
+          summary: 'Turn on Filter, sort A→Z, filter by value.',
+          objectives: ['Enable Filter feature', 'Sort data A→Z', 'Filter by specific values', 'Understand data organization'],
+          seed: 'Teach turning on Filter, sorting A→Z, and filtering by value. Include a small sample and a 3-question quiz.'
+        }
+      }
+    },
+    C: {
+      title: "Unit C — Presenting & Printing", 
+      lessons: {
+        charts: {
+          title: 'Intro charts',
+          summary: 'Build a Column chart from a 2-column table.',
+          objectives: ['Select data for charts', 'Insert Column chart', 'Understand chart basics', 'Format chart elements'],
+          seed: 'Teach inserting a Column chart from a 2-column table. Provide the sample data and a 3-question quiz.'
+        },
+        printing: {
+          title: 'Printing basics',
+          summary: 'Print Preview, orientation, margins, fit to one page.',
+          objectives: ['Use Print Preview', 'Set page orientation', 'Adjust margins', 'Fit content to one page'],
+          seed: 'Teach Print Preview, orientation, margins, and \'Fit Sheet on One Page\'. Include a 3-question quiz.'
+        }
+      }
+    }
+  }
 };
+
+// Helper function to get flat lesson list for compatibility
+function getFlatLessons() {
+  const lessons = {};
+  Object.values(SYLLABUS.units).forEach(unit => {
+    Object.entries(unit.lessons).forEach(([id, lesson]) => {
+      lessons[id] = lesson;
+    });
+  });
+  return lessons;
+}
+
+const LESSONS = getFlatLessons();
 
 const els = {
   lessonList: document.getElementById('lessonList'),
@@ -53,10 +97,303 @@ const els = {
   reset: document.getElementById('resetProgress'),
   currentLesson: document.getElementById('currentLesson'),
   markDone: document.getElementById('markDone'),
+  // Tool tray elements
+  createPracticeFile: document.getElementById('createPracticeFile'),
+  showExample: document.getElementById('showExample'),
+  cheatSheet: document.getElementById('cheatSheet'),
+  takeQuiz: document.getElementById('takeQuiz'),
+  retryEasier: document.getElementById('retryEasier'),
+  advanceTopic: document.getElementById('advanceTopic'),
+  improveSyllabus: document.getElementById('improveSyllabus'),
+  // Modal elements
+  cheatSheetModal: document.getElementById('cheatSheetModal'),
+  closeCheatSheet: document.getElementById('closeCheatSheet'),
+  // Quiz elements
+  quizModal: document.getElementById('quizModal'),
+  quizTitle: document.getElementById('quizTitle'),
+  quizContent: document.getElementById('quizContent'),
+  quizQuestions: document.getElementById('quizQuestions'),
+  quizResults: document.getElementById('quizResults'),
+  quizScore: document.getElementById('quizScore'),
+  quizFeedback: document.getElementById('quizFeedback'),
+  submitQuiz: document.getElementById('submitQuiz'),
+  cancelQuiz: document.getElementById('cancelQuiz'),
+  retakeQuiz: document.getElementById('retakeQuiz'),
+  continueFromQuiz: document.getElementById('continueFromQuiz'),
+  closeQuiz: document.getElementById('closeQuiz')
 };
 
 const HISTORY_KEY = 'history';
-const PROGRESS_KEY = 'dadTutorProgress';
+const PROGRESS_KEY = 'dadTutorProgress'; // Keep for backward compatibility
+const SYLLABUS_KEY = 'dadTutorSyllabusV1';
+
+// Quiz definitions for each lesson (2 MCQ + 1 Action Task)
+const QUIZZES = {
+  orientation: {
+    title: "Orientation Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "What is the difference between a workbook and a worksheet?",
+        options: [
+          "A workbook is a single sheet, a worksheet is multiple sheets",
+          "A workbook contains one or more worksheets",
+          "There is no difference, they are the same thing",
+          "A worksheet contains workbooks"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq", 
+        question: "Where do you find formatting tools like Bold and Font Size?",
+        options: [
+          "In the File tab",
+          "In the Insert tab", 
+          "In the Home tab",
+          "In the Data tab"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "What keyboard shortcut do you press to save a file?",
+        placeholder: "Type the exact keyboard shortcut (example: Ctrl+A)",
+        correct: "Ctrl+S"
+      }
+    ]
+  },
+  navigation: {
+    title: "Navigation & Entry Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "Which key moves you to the cell directly below?",
+        options: [
+          "Tab key",
+          "Enter key",
+          "Space key", 
+          "Shift key"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq",
+        question: "Which key moves you to the cell to the right?",
+        options: [
+          "Enter key",
+          "Arrow Down key",
+          "Tab key",
+          "Ctrl key"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "If you want to save your work with a new name, which menu do you click first?",
+        placeholder: "Type the exact tab name",
+        correct: "File"
+      }
+    ]
+  },
+  formatting: {
+    title: "Formatting Basics Quiz", 
+    questions: [
+      {
+        type: "mcq",
+        question: "To make text bold in Excel, you click the Bold button in which tab?",
+        options: [
+          "Insert tab",
+          "Home tab",
+          "Data tab",
+          "Review tab"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq",
+        question: "To add borders around cells, you use which feature?",
+        options: [
+          "Font Color",
+          "Cell Styles",
+          "Borders button",
+          "Format Painter"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "What do you drag to make a column wider?",
+        placeholder: "Type what you drag (be specific)",
+        correct: "column border"
+      }
+    ]
+  },
+  formulas1: {
+    title: "Formulas 1 Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "Every formula in Excel must start with which character?",
+        options: [
+          "$ (dollar sign)",
+          "= (equals sign)",
+          "@ (at symbol)",
+          "+ (plus sign)"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq",
+        question: "To add numbers in cells A1 through A5, which formula is correct?",
+        options: [
+          "=ADD(A1:A5)",
+          "=SUM(A1-A5)",
+          "=SUM(A1:A5)",
+          "=TOTAL(A1:A5)"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "Type the exact formula to calculate the average of cells B1 through B4:",
+        placeholder: "=FUNCTION(range)",
+        correct: "=AVERAGE(B1:B4)"
+      }
+    ]
+  },
+  autofill: {
+    title: "Autofill & Relative References Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "The small square in the bottom-right corner of a selected cell is called:",
+        options: [
+          "Fill handle",
+          "Corner tab",
+          "Drag square",
+          "Copy corner"
+        ],
+        correct: 0
+      },
+      {
+        type: "mcq",
+        question: "When you copy a formula, Excel automatically adjusts cell references. This is called:",
+        options: [
+          "Absolute references",
+          "Fixed references", 
+          "Relative references",
+          "Dynamic references"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "What do you drag to copy a formula down to multiple cells?",
+        placeholder: "Type the name of what you drag",
+        correct: "fill handle"
+      }
+    ]
+  },
+  sortfilter: {
+    title: "Sort & Filter Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "To enable filtering on your data, you go to which tab?",
+        options: [
+          "Home tab",
+          "Insert tab",
+          "Data tab", 
+          "Review tab"
+        ],
+        correct: 2
+      },
+      {
+        type: "mcq",
+        question: "After clicking Filter, what appears next to your column headers?",
+        options: [
+          "Sort buttons",
+          "Drop-down arrows",
+          "Filter boxes",
+          "Menu bars"
+        ],
+        correct: 1
+      },
+      {
+        type: "action",
+        question: "To sort data A to Z (alphabetically), which button do you click in the Data tab?",
+        placeholder: "Type the button name",
+        correct: "Sort A to Z"
+      }
+    ]
+  },
+  charts: {
+    title: "Intro Charts Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "To insert a chart, you first select your data, then go to which tab?",
+        options: [
+          "Home tab",
+          "Insert tab",
+          "Data tab",
+          "Design tab"
+        ],
+        correct: 1
+      },
+      {
+        type: "mcq",
+        question: "A Column chart is best for showing:",
+        options: [
+          "Percentages of a whole",
+          "Trends over time",
+          "Comparing values across categories",
+          "Geographic data"
+        ],
+        correct: 2
+      },
+      {
+        type: "action",
+        question: "Before creating a chart, what must you do first?",
+        placeholder: "Type the first step",
+        correct: "select the data"
+      }
+    ]
+  },
+  printing: {
+    title: "Printing Basics Quiz",
+    questions: [
+      {
+        type: "mcq",
+        question: "To see how your worksheet will look when printed, you use:",
+        options: [
+          "Print Preview",
+          "Page Layout",
+          "Normal View",
+          "Draft Mode"
+        ],
+        correct: 0
+      },
+      {
+        type: "mcq",
+        question: "To make your worksheet fit on one page, you select:",
+        options: [
+          "Shrink to Fit",
+          "Fit Sheet on One Page",
+          "Scale to Page",
+          "Auto Fit"
+        ],
+        correct: 1
+      },
+      {
+        type: "action",
+        question: "What keyboard shortcut opens the Print dialog?",
+        placeholder: "Type the exact shortcut",
+        correct: "Ctrl+P"
+      }
+    ]
+  }
+};
 
 function loadHistory() {
   try {
@@ -84,6 +421,67 @@ function saveProgress(progress) {
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 }
 
+// Syllabus management functions
+function loadSyllabus() {
+  try {
+    const raw = localStorage.getItem(SYLLABUS_KEY);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch {
+    // Fall through to create default
+  }
+  
+  // Create default syllabus with lesson statuses
+  const syllabus = {
+    units: {},
+    lastUpdated: new Date().toISOString()
+  };
+  
+  Object.entries(SYLLABUS.units).forEach(([unitId, unit]) => {
+    syllabus.units[unitId] = {
+      title: unit.title,
+      lessons: {}
+    };
+    
+    Object.entries(unit.lessons).forEach(([lessonId, lesson]) => {
+      syllabus.units[unitId].lessons[lessonId] = {
+        title: lesson.title,
+        summary: lesson.summary,
+        objectives: lesson.objectives,
+        status: 'not_started', // not_started | in_progress | mastered
+        lastResult: null, // { score: number, answers: array, timestamp: string }
+        attempts: 0
+      };
+    });
+  });
+  
+  saveSyllabus(syllabus);
+  return syllabus;
+}
+
+function saveSyllabus(syllabus) {
+  syllabus.lastUpdated = new Date().toISOString();
+  localStorage.setItem(SYLLABUS_KEY, JSON.stringify(syllabus));
+}
+
+function updateLessonStatus(lessonId, status, result = null) {
+  const syllabus = loadSyllabus();
+  
+  // Find the lesson in the syllabus structure
+  for (const [unitId, unit] of Object.entries(syllabus.units)) {
+    if (unit.lessons[lessonId]) {
+      unit.lessons[lessonId].status = status;
+      if (result) {
+        unit.lessons[lessonId].lastResult = result;
+        unit.lessons[lessonId].attempts++;
+      }
+      saveSyllabus(syllabus);
+      return;
+    }
+  }
+}
+
 function addMessage(role, content) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
@@ -101,50 +499,69 @@ function renderHistory(history) {
 
 function renderLessons(progress) {
   els.lessonList.innerHTML = '';
-  Object.entries(LESSONS).forEach(([id, info]) => {
-    const li = document.createElement('li');
-    li.className = 'lesson';
-    li.tabIndex = 0;
-    li.setAttribute('data-lesson-id', id);
+  const syllabus = loadSyllabus();
+  
+  Object.entries(syllabus.units).forEach(([unitId, unit]) => {
+    // Create unit header
+    const unitHeader = document.createElement('div');
+    unitHeader.className = 'unit-header';
+    unitHeader.innerHTML = `<h3>${unit.title}</h3>`;
+    els.lessonList.appendChild(unitHeader);
+    
+    // Create lessons for this unit
+    Object.entries(unit.lessons).forEach(([lessonId, lesson]) => {
+      const li = document.createElement('li');
+      li.className = 'lesson';
+      li.tabIndex = 0;
+      li.setAttribute('data-lesson-id', lessonId);
 
-    const title = document.createElement('div');
-    title.className = 'lesson-title';
-    title.textContent = info.title;
+      const title = document.createElement('div');
+      title.className = 'lesson-title';
+      title.textContent = lesson.title;
 
-    const summary = document.createElement('div');
-    summary.className = 'lesson-summary';
-    summary.textContent = info.summary;
+      const summary = document.createElement('div');
+      summary.className = 'lesson-summary';
+      summary.textContent = lesson.summary;
 
-    const status = document.createElement('div');
-    const p = progress[id];
-    const badge = document.createElement('span');
-    badge.className = 'badge';
-    if (p?.done) {
-      badge.textContent = 'Done';
-    } else if (p?.last) {
-      badge.textContent = 'In progress';
-    } else {
-      badge.textContent = 'Not started';
-    }
-    status.appendChild(badge);
+      const status = document.createElement('div');
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      
+      // Use new status system
+      switch(lesson.status) {
+        case 'mastered':
+          badge.textContent = 'Mastered';
+          badge.classList.add('badge-mastered');
+          break;
+        case 'in_progress':
+          badge.textContent = 'In Progress';
+          badge.classList.add('badge-progress');
+          break;
+        default:
+          badge.textContent = 'Not Started';
+          badge.classList.add('badge-not-started');
+      }
+      status.appendChild(badge);
 
-    if (progress[id]?.last) {
-      const last = document.createElement('div');
-      last.className = 'lesson-summary';
-      last.textContent = `Last: ${progress[id].last}`;
-      status.appendChild(last);
-    }
+      // Show quiz results if available
+      if (lesson.lastResult) {
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'lesson-summary';
+        resultDiv.textContent = `Last quiz: ${lesson.lastResult.score}/3 (${new Date(lesson.lastResult.timestamp).toLocaleDateString()})`;
+        status.appendChild(resultDiv);
+      }
 
-    li.appendChild(title);
-    li.appendChild(summary);
-    li.appendChild(status);
+      li.appendChild(title);
+      li.appendChild(summary);
+      li.appendChild(status);
 
-    li.addEventListener('click', () => startLesson(id));
-    li.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') startLesson(id);
+      li.addEventListener('click', () => startLesson(lessonId));
+      li.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') startLesson(lessonId);
+      });
+
+      els.lessonList.appendChild(li);
     });
-
-    els.lessonList.appendChild(li);
   });
 }
 
@@ -160,10 +577,11 @@ function setInitialMessage() {
   }
 }
 
-async function sendToTutor(text, lessonId) {
+async function sendToTutor(text, lessonId, mode = 'normal') {
   const history = loadHistory();
   const payload = {
     messages: history,
+    mode: mode
   };
   if (lessonId) payload.lessonId = lessonId;
 
@@ -188,10 +606,14 @@ async function sendToTutor(text, lessonId) {
 }
 
 async function startLesson(lessonId) {
+  // Update both old progress and new syllabus for backward compatibility
   const progress = loadProgress();
   progress[lessonId] = progress[lessonId] || { done: false, last: '' };
   progress[lessonId].last = new Date().toISOString();
   saveProgress(progress);
+  
+  // Update syllabus status
+  updateLessonStatus(lessonId, 'in_progress');
 
   els.currentLesson.textContent = `Current lesson: ${LESSONS[lessonId].title}`;
   els.markDone.style.display = 'inline-block';
@@ -224,11 +646,21 @@ async function startLesson(lessonId) {
 }
 
 function markLessonDone(lessonId) {
+  // Update old progress for backward compatibility  
   const progress = loadProgress();
   if (!progress[lessonId]) progress[lessonId] = { done: false, last: '' };
   progress[lessonId].done = true;
   progress[lessonId].last = new Date().toISOString();
   saveProgress(progress);
+  
+  // Update syllabus - mark as mastered (assuming 3/3 quiz score)
+  const result = {
+    score: 3,
+    answers: ['completed'],
+    timestamp: new Date().toISOString()
+  };
+  updateLessonStatus(lessonId, 'mastered', result);
+  
   renderLessons(progress);
 }
 
@@ -264,11 +696,358 @@ async function onSend(e) {
 function resetAll() {
   sessionStorage.removeItem(HISTORY_KEY);
   localStorage.removeItem(PROGRESS_KEY);
+  localStorage.removeItem(SYLLABUS_KEY); // Clear syllabus data too
   els.messages.innerHTML = '';
   els.currentLesson.textContent = '';
   els.markDone.style.display = 'none';
   setInitialMessage();
   renderLessons(loadProgress());
+}
+
+// Tool Tray Functions
+function showCheatSheet() {
+  els.cheatSheetModal.style.display = 'block';
+}
+
+function hideCheatSheet() {
+  els.cheatSheetModal.style.display = 'none';
+}
+
+async function createPracticeFile() {
+  // Get current lesson context
+  const activeLesson = document.querySelector('.lesson.active');
+  if (!activeLesson) {
+    toast('Please select a lesson first');
+    return;
+  }
+  
+  const lessonId = activeLesson.getAttribute('data-lesson-id');
+  const lesson = LESSONS[lessonId];
+  
+  // Generate practice data based on lesson type
+  let csvData = '';
+  let filename = '';
+  
+  switch(lessonId) {
+    case 'orientation':
+      csvData = 'Item,Quantity\nApples,12\nBananas,8\nOranges,15\nGrapes,20';
+      filename = 'UnitA_Orientation_Practice.csv';
+      break;
+    case 'navigation':
+      csvData = 'Name,Age,City\nJohn Smith,45,Seattle\nMary Johnson,52,Portland\nBob Wilson,38,Vancouver\nSusan Davis,41,Spokane';
+      filename = 'UnitA_Navigation_Practice.csv';
+      break;
+    case 'formatting':
+      csvData = 'Product,Price,In Stock\nLaptop,899.99,Yes\nMouse,29.99,No\nKeyboard,79.99,Yes\nMonitor,299.99,Yes';
+      filename = 'UnitA_Formatting_Practice.csv';
+      break;
+    case 'formulas1':
+      csvData = 'Month,Sales\nJanuary,1250\nFebruary,1380\nMarch,1195\nApril,1425\nMay,1340';
+      filename = 'UnitB_Formulas1_Practice.csv';
+      break;
+    case 'autofill':
+      csvData = 'Week,Orders\nWeek 1,45\nWeek 2,52\nWeek 3,48\nWeek 4,61\nWeek 5,55';
+      filename = 'UnitB_Autofill_Practice.csv';
+      break;
+    case 'sortfilter':
+      csvData = 'Employee,Department,Salary\nAlice Brown,Marketing,52000\nBob Smith,Sales,48000\nCarol Jones,Marketing,55000\nDave Wilson,Sales,51000\nEve Davis,IT,58000';
+      filename = 'UnitB_Sort_Filter_Practice.csv';
+      break;
+    case 'charts':
+      csvData = 'Quarter,Revenue\nQ1,25000\nQ2,32000\nQ3,28000\nQ4,35000';
+      filename = 'UnitC_Charts_Practice.csv';
+      break;
+    case 'printing':
+      csvData = 'Item,Jan,Feb,Mar,Total\nOffice Supplies,450,520,480,1450\nSoftware,1200,1100,1350,3650\nHardware,800,920,760,2480';
+      filename = 'UnitC_Printing_Practice.csv';
+      break;
+    default:
+      csvData = 'Name,Value\nSample 1,100\nSample 2,200\nSample 3,150';
+      filename = 'Practice_Data.csv';
+  }
+  
+  // Create and download the file
+  const blob = new Blob([csvData], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  window.URL.revokeObjectURL(url);
+  
+  toast(`Downloaded ${filename} - Open it in Excel to practice!`);
+}
+
+async function showExample() {
+  const activeLesson = document.querySelector('.lesson.active');
+  if (!activeLesson) {
+    toast('Please select a lesson first');
+    return;
+  }
+  
+  const lessonId = activeLesson.getAttribute('data-lesson-id');
+  const examplePrompt = `Show me a specific micro-example for the ${LESSONS[lessonId].title} lesson with exact values and step-by-step instructions.`;
+  
+  await sendMessageToTutor(examplePrompt, 'normal');
+}
+
+function takeQuiz() {
+  const activeLesson = document.querySelector('.lesson.active');
+  if (!activeLesson) {
+    toast('Please select a lesson first');
+    return;
+  }
+  
+  const lessonId = activeLesson.getAttribute('data-lesson-id');
+  startQuiz(lessonId);
+}
+
+async function retryEasier() {
+  const retryPrompt = `The learner is struggling with the current topic. Please provide an easier explanation, simplify the steps, and show a very small example with exact numbers. Break it down into smaller pieces.`;
+  
+  await sendMessageToTutor(retryPrompt, 'remediate');
+}
+
+async function advanceTopic() {
+  const advancePrompt = `The learner has mastered the current concept. Please introduce the next concept in the syllabus with one micro-exercise and then a short 3-question quiz.`;
+  
+  await sendMessageToTutor(advancePrompt, 'advance');
+}
+
+async function improveSyllabus() {
+  const progress = loadProgress();
+  const lastResults = Object.entries(progress)
+    .filter(([_, p]) => p.last)
+    .map(([lesson, p]) => `${lesson}: ${p.done ? 'completed' : 'in progress'} (${p.last})`)
+    .join(', ');
+  
+  const improvePrompt = `Based on the user's recent progress and any struggles in [${lastResults}], please propose a revised 3-lesson sequence with measurable objectives and one tiny practice per lesson. Keep all steps Windows-specific.`;
+  
+  await sendMessageToTutor(improvePrompt, 'normal');
+}
+
+async function sendMessageToTutor(prompt, mode = 'normal') {
+  addMessage('user', prompt);
+  const history = loadHistory();
+  history.push({ role: 'user', content: prompt });
+  saveHistory(history);
+
+  disableSend(true);
+  const { reply, error } = await sendToTutor(prompt, null, mode);
+  disableSend(false);
+  
+  if (error) {
+    const errorMsg = error.includes('OPENAI_API_KEY') 
+      ? 'OpenAI API key is missing or invalid. Please check your environment settings.'
+      : 'Sorry, I could not reach the tutor. Please try again.';
+    toast(errorMsg);
+    addMessage('assistant', errorMsg);
+    return;
+  }
+  
+  addMessage('assistant', reply);
+  const updated = loadHistory();
+  updated.push({ role: 'assistant', content: reply });
+  saveHistory(updated);
+}
+
+// Quiz System Functions
+let currentQuiz = null;
+let currentLessonId = null;
+
+function startQuiz(lessonId) {
+  const quiz = QUIZZES[lessonId];
+  if (!quiz) {
+    toast('No quiz available for this lesson');
+    return;
+  }
+  
+  currentQuiz = quiz;
+  currentLessonId = lessonId;
+  
+  els.quizTitle.textContent = quiz.title;
+  renderQuizQuestions(quiz.questions);
+  
+  // Show quiz, hide results
+  els.quizContent.style.display = 'block';
+  els.quizResults.style.display = 'none';
+  els.quizModal.style.display = 'block';
+}
+
+function renderQuizQuestions(questions) {
+  els.quizQuestions.innerHTML = '';
+  
+  questions.forEach((question, index) => {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'quiz-question';
+    
+    const questionTitle = document.createElement('h4');
+    questionTitle.textContent = `${index + 1}. ${question.question}`;
+    questionDiv.appendChild(questionTitle);
+    
+    if (question.type === 'mcq') {
+      const optionsDiv = document.createElement('div');
+      optionsDiv.className = 'quiz-options';
+      
+      question.options.forEach((option, optionIndex) => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'quiz-option';
+        
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = `question_${index}`;
+        radio.value = optionIndex;
+        radio.id = `q${index}_o${optionIndex}`;
+        
+        const label = document.createElement('label');
+        label.htmlFor = radio.id;
+        label.textContent = option;
+        
+        optionDiv.appendChild(radio);
+        optionDiv.appendChild(label);
+        optionsDiv.appendChild(optionDiv);
+      });
+      
+      questionDiv.appendChild(optionsDiv);
+    } else if (question.type === 'action') {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'quiz-input';
+      input.placeholder = question.placeholder;
+      input.name = `question_${index}`;
+      questionDiv.appendChild(input);
+    }
+    
+    els.quizQuestions.appendChild(questionDiv);
+  });
+}
+
+function submitQuiz() {
+  if (!currentQuiz) return;
+  
+  const answers = [];
+  let allAnswered = true;
+  
+  currentQuiz.questions.forEach((question, index) => {
+    if (question.type === 'mcq') {
+      const selectedRadio = document.querySelector(`input[name="question_${index}"]:checked`);
+      if (selectedRadio) {
+        answers.push(parseInt(selectedRadio.value));
+      } else {
+        allAnswered = false;
+        answers.push(null);
+      }
+    } else if (question.type === 'action') {
+      const input = document.querySelector(`input[name="question_${index}"]`);
+      if (input && input.value.trim()) {
+        answers.push(input.value.trim());
+      } else {
+        allAnswered = false;
+        answers.push('');
+      }
+    }
+  });
+  
+  if (!allAnswered) {
+    toast('Please answer all questions before submitting');
+    return;
+  }
+  
+  gradeQuiz(answers);
+}
+
+function gradeQuiz(answers) {
+  let score = 0;
+  const feedback = [];
+  
+  currentQuiz.questions.forEach((question, index) => {
+    const userAnswer = answers[index];
+    const isCorrect = checkAnswer(question, userAnswer);
+    
+    if (isCorrect) {
+      score++;
+      feedback.push(`Question ${index + 1}: ✓ Correct`);
+    } else {
+      if (question.type === 'mcq') {
+        feedback.push(`Question ${index + 1}: ✗ Incorrect. The correct answer was: ${question.options[question.correct]}`);
+      } else {
+        feedback.push(`Question ${index + 1}: ✗ Incorrect. The correct answer was: ${question.correct}`);
+      }
+    }
+  });
+  
+  // Store quiz result
+  const result = {
+    score: score,
+    answers: answers,
+    timestamp: new Date().toISOString()
+  };
+  
+  // Update lesson status based on score
+  const status = score === 3 ? 'mastered' : 'in_progress';
+  updateLessonStatus(currentLessonId, status, result);
+  
+  // Update old progress system too
+  const progress = loadProgress();
+  if (!progress[currentLessonId]) progress[currentLessonId] = { done: false, last: '' };
+  progress[currentLessonId].done = score === 3;
+  progress[currentLessonId].last = new Date().toISOString();
+  saveProgress(progress);
+  
+  // Show results
+  showQuizResults(score, feedback);
+  
+  // Update lesson display
+  renderLessons(progress);
+}
+
+function checkAnswer(question, userAnswer) {
+  if (question.type === 'mcq') {
+    return userAnswer === question.correct;
+  } else if (question.type === 'action') {
+    // Normalize answers for comparison (case insensitive, trim whitespace)
+    const correct = question.correct.toLowerCase().trim();
+    const user = userAnswer.toLowerCase().trim();
+    return user === correct;
+  }
+  return false;
+}
+
+function showQuizResults(score, feedback) {
+  els.quizContent.style.display = 'none';
+  els.quizResults.style.display = 'block';
+  
+  // Set score display
+  els.quizScore.textContent = `Score: ${score}/3`;
+  if (score === 3) {
+    els.quizScore.className = 'quiz-score-perfect';
+  } else if (score === 2) {
+    els.quizScore.className = 'quiz-score-good';
+  } else {
+    els.quizScore.className = 'quiz-score-needs-work';
+  }
+  
+  // Set feedback
+  els.quizFeedback.innerHTML = feedback.map(f => `<p>${f}</p>`).join('');
+  
+  // Show appropriate message
+  if (score === 3) {
+    addMessage('assistant', `🎉 Excellent! You scored ${score}/3 on the ${currentQuiz.title}. This lesson is now marked as mastered!`);
+  } else {
+    addMessage('assistant', `You scored ${score}/3 on the ${currentQuiz.title}. Review the feedback and try again when you're ready.`);
+  }
+}
+
+function closeQuiz() {
+  els.quizModal.style.display = 'none';
+  currentQuiz = null;
+  currentLessonId = null;
+}
+
+function retakeQuiz() {
+  if (currentLessonId) {
+    startQuiz(currentLessonId);
+  }
 }
 
 function init() {
@@ -277,6 +1056,31 @@ function init() {
   els.composer.addEventListener('submit', onSend);
   els.reset.addEventListener('click', resetAll);
   autoResize(els.input);
+  
+  // Tool tray event listeners
+  els.createPracticeFile.addEventListener('click', createPracticeFile);
+  els.showExample.addEventListener('click', showExample);
+  els.cheatSheet.addEventListener('click', showCheatSheet);
+  els.takeQuiz.addEventListener('click', takeQuiz);
+  els.retryEasier.addEventListener('click', retryEasier);
+  els.advanceTopic.addEventListener('click', advanceTopic);
+  els.improveSyllabus.addEventListener('click', improveSyllabus);
+  
+  // Modal event listeners
+  els.closeCheatSheet.addEventListener('click', hideCheatSheet);
+  els.cheatSheetModal.addEventListener('click', (e) => {
+    if (e.target === els.cheatSheetModal) hideCheatSheet();
+  });
+  
+  // Quiz event listeners
+  els.submitQuiz.addEventListener('click', submitQuiz);
+  els.cancelQuiz.addEventListener('click', closeQuiz);
+  els.retakeQuiz.addEventListener('click', retakeQuiz);
+  els.continueFromQuiz.addEventListener('click', closeQuiz);
+  els.closeQuiz.addEventListener('click', closeQuiz);
+  els.quizModal.addEventListener('click', (e) => {
+    if (e.target === els.quizModal) closeQuiz();
+  });
 }
 
 window.addEventListener('DOMContentLoaded', init);

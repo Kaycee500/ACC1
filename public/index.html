@@ -30,6 +30,15 @@
       <section id="messages" aria-live="polite" aria-label="Chat messages">
         <!-- Chat messages inserted here -->
       </section>
+      <div id="toolTray" class="tool-tray">
+        <button id="createPracticeFile" class="tool-btn">Create Practice File</button>
+        <button id="showExample" class="tool-btn">Show Example</button>
+        <button id="cheatSheet" class="tool-btn">Cheat Sheet</button>
+        <button id="takeQuiz" class="tool-btn">Take Quiz</button>
+        <button id="retryEasier" class="tool-btn">Retry Easier</button>
+        <button id="advanceTopic" class="tool-btn">Advance Topic</button>
+        <button id="improveSyllabus" class="tool-btn">Improve Syllabus</button>
+      </div>
       <form id="composer" autocomplete="off">
         <label class="sr-only" for="input">Type your message</label>
         <textarea id="input" rows="3" placeholder="Type here…"></textarea>
@@ -37,6 +46,79 @@
       </form>
     </main>
   </div>
+  
+  <!-- Quiz Modal -->
+  <div id="quizModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="quizTitle">Lesson Quiz</h2>
+        <button class="modal-close" id="closeQuiz">&times;</button>
+      </div>
+      <div id="quizContent">
+        <div id="quizQuestions">
+          <!-- Questions will be inserted here -->
+        </div>
+        <div id="quizActions">
+          <button id="submitQuiz" class="tool-btn">Submit Quiz</button>
+          <button id="cancelQuiz" class="tool-btn">Cancel</button>
+        </div>
+      </div>
+      <div id="quizResults" style="display: none;">
+        <h3>Quiz Results</h3>
+        <div id="quizScore"></div>
+        <div id="quizFeedback"></div>
+        <button id="retakeQuiz" class="tool-btn">Retake Quiz</button>
+        <button id="continueFromQuiz" class="tool-btn">Continue</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Cheat Sheet Modal -->
+  <div id="cheatSheetModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Excel Cheat Sheet for Windows</h2>
+        <button class="modal-close" id="closeCheatSheet">&times;</button>
+      </div>
+      <div id="cheatSheetContent">
+        <h3>Essential Ribbon Locations</h3>
+        <ul>
+          <li><strong>Home Tab:</strong> Bold, formatting, borders, number formats</li>
+          <li><strong>Insert Tab:</strong> Charts, tables, pictures</li>
+          <li><strong>Data Tab:</strong> Sort, Filter, Text to Columns</li>
+          <li><strong>File Tab:</strong> Save, Open, Print, New</li>
+        </ul>
+        
+        <h3>Common Shortcuts</h3>
+        <ul>
+          <li><strong>Ctrl + S:</strong> Save</li>
+          <li><strong>Ctrl + C:</strong> Copy</li>
+          <li><strong>Ctrl + V:</strong> Paste</li>
+          <li><strong>Ctrl + Z:</strong> Undo</li>
+          <li><strong>Arrow Keys:</strong> Move between cells</li>
+          <li><strong>Enter:</strong> Move down one cell</li>
+          <li><strong>Tab:</strong> Move right one cell</li>
+        </ul>
+        
+        <h3>Basic Formulas</h3>
+        <ul>
+          <li><strong>=SUM(A1:A5):</strong> Add numbers in range A1 to A5</li>
+          <li><strong>=AVERAGE(A1:A5):</strong> Average of numbers in range</li>
+          <li><strong>=COUNT(A1:A5):</strong> Count cells with numbers</li>
+        </ul>
+        
+        <h3>Saving Your Work</h3>
+        <ol>
+          <li>Press <strong>Ctrl + S</strong> or click File tab</li>
+          <li>Choose "Save As" for first save</li>
+          <li>Pick a folder (like Documents)</li>
+          <li>Type a clear file name</li>
+          <li>Click "Save" button</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  
   <script src="/app.js" defer></script>
 </body>
 </html>

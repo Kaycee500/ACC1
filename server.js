@@ -12,59 +12,83 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.static('public', { index: 'index.html' }));
 
 // System Prompt used for every AI request
-const SYSTEM_PROMPT = `You are “Dad’s Excel Tutor,” a calm, patient AI teacher for a 70-year-old accountant who is a visual learner and new to computers.
-Language: English only.
-Platform: Windows 10/11 only.
-Style: Numbered, step-by-step instructions with short sentences and simple words. Avoid jargon unless you define it immediately.
-Visual guidance: Describe what to look for on screen (e.g., “A green ‘Home’ tab at the top”).
-Pacing: One concept at a time. Include a “Try it” micro-exercise when teaching. When the user finishes a mini-lesson, offer a 3-question quiz (2 multiple-choice + 1 short action task).
-Excel level: Absolute beginner.
-Clarity rules: Never approximate numbers. If uncertain, say so and propose a safe next step.
-Safety: Never ask for or display API keys or private info.`;
+const SYSTEM_PROMPT = `You are **Dad's Excel Tutor**, a calm, patient teacher for a 70-year-old visual and interactive learner who is new to Excel.
+**Language:** English only.
+**Platform:** Windows 10/11 only.
+**Teaching style:**
 
-// Lesson seed prompts
+1. Use short sentences and **numbered** steps.
+2. Always reference **exact** menu names, buttons, and keystrokes.
+3. Include **micro-exercises** after teaching a concept.
+4. Offer a **3-question quiz** (2 multiple-choice + 1 short action task).
+5. Provide clear **on-screen cues** (e.g., "Look for the **Home** tab on the top Ribbon").
+6. **Never approximate numbers** unless the user explicitly requests an approximation.
+7. If uncertain, say so and propose a safe check or alternative.
+8. Always tailor pace and complexity based on the learner's performance and feedback.
+   **Excel level:** true beginner.
+   **Improvement loop:** When the user struggles or asks for more, (a) simplify and repeat, (b) show a small example with **exact** values, (c) add a follow-up practice file, and (d) propose a revised mini-syllabus for the next steps.`;
+
+// Lesson seed prompts (from section 8 of requirements)
 const LESSONS = {
   orientation: {
-    title: 'Excel Orientation',
-    summary: 'Workbooks vs. worksheets, rows, columns, cells, and the Ribbon.',
-    seed: 'Teach the very first Excel lesson on Windows. Explain workbook, worksheet, rows, columns, cells, and the Ribbon. Include a 5-step hands-on practice and then a 3-question quiz.'
+    title: 'Orientation',
+    summary: 'Workbook vs. worksheet; rows/columns/cells; the Ribbon; saving a file.',
+    seed: 'Teach the very first Excel lesson on Windows. Explain workbook, worksheet, rows, columns, cells, the Ribbon, and saving a file. Include a 5-step hands-on practice and a 3-question quiz.'
   },
-  data: {
-    title: 'Entering & Saving Data',
-    summary: 'Type text and numbers, move around, and save a workbook.',
-    seed: 'Teach how to enter text and numbers, move with arrow keys, and save a workbook on Windows. Include a small practice table and a 3-question quiz.'
+  navigation: {
+    title: 'Navigation & Entry',
+    summary: 'Moving with arrow keys, selecting cells, typing text/numbers, and saving with a clear file name.',
+    seed: 'Teach moving with arrow keys, selecting cells, typing text/numbers, and saving with a clear file name. Include a tiny practice table and a 3-question quiz.'
   },
   formatting: {
     title: 'Formatting Basics',
-    summary: 'Bold, borders, resize columns/rows, number formats.',
-    seed: 'Teach bold text, borders, column width, row height, and number formats in Excel on Windows. Include a guided practice and a 3-question quiz.'
+    summary: 'Bold, borders, column width, row height, and number formats.',
+    seed: 'Teach bold, borders, column width, row height, and number formats. Include an exact mini-table and a 3-question quiz.'
   },
-  formulas: {
-    title: 'Simple Formulas',
+  formulas1: {
+    title: 'Formulas 1',
     summary: '=SUM and =AVERAGE with exact keystrokes.',
-    seed: 'Teach =SUM and =AVERAGE with exact keystrokes for Windows. Provide a tiny data set, have me compute totals and averages, then a 3-question quiz.'
+    seed: 'Teach `=SUM` and `=AVERAGE` with exact keystrokes. Provide a tiny dataset, compute totals/averages, then a 3-question quiz.'
+  },
+  autofill: {
+    title: 'Autofill & Copy',
+    summary: 'Autofill handle, relative references, and safe copying of formulas.',
+    seed: 'Teach Autofill handle, relative references, and safe copying of formulas. Include a small table and a 3-question quiz.'
   },
   sortfilter: {
     title: 'Sort & Filter',
     summary: 'Turn on Filter, sort A→Z, filter by value.',
-    seed: 'Teach how to enable Filter, sort A→Z, and filter by a value in Excel on Windows. Include a tiny sample table and a 3-question quiz.'
+    seed: 'Teach turning on Filter, sorting A→Z, and filtering by value. Include a small sample and a 3-question quiz.'
   },
   charts: {
-    title: 'Intro to Charts',
-    summary: 'Insert a column chart from a small table.',
-    seed: 'Teach how to insert a simple column chart from a small table in Excel on Windows. Provide a practice table and a 3-question quiz.'
+    title: 'Intro Charts',
+    summary: 'Insert a Column chart from a 2-column table.',
+    seed: 'Teach inserting a Column chart from a 2-column table. Provide the sample data and a 3-question quiz.'
   },
   printing: {
-    title: 'Printing Basics',
-    summary: 'Print preview and fit to one page.',
-    seed: 'Teach print preview, page orientation, margins, and fit to one page in Excel on Windows. Include a 3-question quiz.'
+    title: 'Printing',
+    summary: 'Print Preview, orientation, margins, and \'Fit Sheet on One Page\'.',
+    seed: 'Teach Print Preview, orientation, margins, and \'Fit Sheet on One Page\'. Include a 3-question quiz.'
   }
 };
 
 // Helper: build messages array with system and optional lesson seed
-function buildMessages(inputMessages = [], lessonId) {
+function buildMessages(inputMessages = [], lessonId, mode = 'normal') {
   const messages = [];
   messages.push({ role: 'system', content: SYSTEM_PROMPT });
+
+  // Add orchestration seeds based on mode
+  if (mode === 'remediate') {
+    messages.push({ 
+      role: 'user', 
+      content: 'The learner struggled with the current topic and needs help. Provide an easier explanation, a tiny data example, and a new micro-exercise with exact steps.' 
+    });
+  } else if (mode === 'advance') {
+    messages.push({ 
+      role: 'user', 
+      content: 'The learner mastered the current concept. Introduce the next concept in the syllabus map with one micro-exercise and then a short 3-question quiz.' 
+    });
+  }
 
   if (lessonId && LESSONS[lessonId]) {
     messages.push({ role: 'user', content: LESSONS[lessonId].seed });
@@ -84,8 +108,8 @@ function buildMessages(inputMessages = [], lessonId) {
 // POST /chat: proxies to OpenAI Responses API
 app.post('/chat', async (req, res) => {
   try {
-    const { messages: clientMessages, lessonId } = req.body || {};
-    const messages = buildMessages(Array.isArray(clientMessages) ? clientMessages : [], lessonId);
+    const { messages: clientMessages, lessonId, mode = 'normal' } = req.body || {};
+    const messages = buildMessages(Array.isArray(clientMessages) ? clientMessages : [], lessonId, mode);
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
