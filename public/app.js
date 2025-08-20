@@ -53,6 +53,16 @@ const els = {
   reset: document.getElementById('resetProgress'),
   currentLesson: document.getElementById('currentLesson'),
   markDone: document.getElementById('markDone'),
+  // Tool tray elements
+  createPracticeFile: document.getElementById('createPracticeFile'),
+  showExample: document.getElementById('showExample'),
+  cheatSheet: document.getElementById('cheatSheet'),
+  retryEasier: document.getElementById('retryEasier'),
+  advanceTopic: document.getElementById('advanceTopic'),
+  improveSyllabus: document.getElementById('improveSyllabus'),
+  // Modal elements
+  cheatSheetModal: document.getElementById('cheatSheetModal'),
+  closeCheatSheet: document.getElementById('closeCheatSheet')
 };
 
 const HISTORY_KEY = 'history';
@@ -160,10 +170,11 @@ function setInitialMessage() {
   }
 }
 
-async function sendToTutor(text, lessonId) {
+async function sendToTutor(text, lessonId, mode = 'normal') {
   const history = loadHistory();
   const payload = {
     messages: history,
+    mode: mode
   };
   if (lessonId) payload.lessonId = lessonId;
 
@@ -271,12 +282,158 @@ function resetAll() {
   renderLessons(loadProgress());
 }
 
+// Tool Tray Functions
+function showCheatSheet() {
+  els.cheatSheetModal.style.display = 'block';
+}
+
+function hideCheatSheet() {
+  els.cheatSheetModal.style.display = 'none';
+}
+
+async function createPracticeFile() {
+  // Get current lesson context
+  const activeLesson = document.querySelector('.lesson.active');
+  if (!activeLesson) {
+    toast('Please select a lesson first');
+    return;
+  }
+  
+  const lessonId = activeLesson.getAttribute('data-lesson-id');
+  const lesson = LESSONS[lessonId];
+  
+  // Generate practice data based on lesson type
+  let csvData = '';
+  let filename = '';
+  
+  switch(lessonId) {
+    case 'orientation':
+      csvData = 'Item,Quantity\nApples,12\nBananas,8\nOranges,15\nGrapes,20';
+      filename = 'Lesson1_Orientation_Practice.csv';
+      break;
+    case 'data':
+      csvData = 'Name,Age,City\nJohn Smith,45,Seattle\nMary Johnson,52,Portland\nBob Wilson,38,Vancouver\nSusan Davis,41,Spokane';
+      filename = 'Lesson2_Data_Entry_Practice.csv';
+      break;
+    case 'formatting':
+      csvData = 'Product,Price,In Stock\nLaptop,899.99,Yes\nMouse,29.99,No\nKeyboard,79.99,Yes\nMonitor,299.99,Yes';
+      filename = 'Lesson3_Formatting_Practice.csv';
+      break;
+    case 'formulas':
+      csvData = 'Month,Sales\nJanuary,1250\nFebruary,1380\nMarch,1195\nApril,1425\nMay,1340';
+      filename = 'Lesson4_SUM_Average_Practice.csv';
+      break;
+    case 'sortfilter':
+      csvData = 'Employee,Department,Salary\nAlice Brown,Marketing,52000\nBob Smith,Sales,48000\nCarol Jones,Marketing,55000\nDave Wilson,Sales,51000\nEve Davis,IT,58000';
+      filename = 'Lesson5_Sort_Filter_Practice.csv';
+      break;
+    case 'charts':
+      csvData = 'Quarter,Revenue\nQ1,25000\nQ2,32000\nQ3,28000\nQ4,35000';
+      filename = 'Lesson6_Charts_Practice.csv';
+      break;
+    case 'printing':
+      csvData = 'Item,Jan,Feb,Mar,Total\nOffice Supplies,450,520,480,1450\nSoftware,1200,1100,1350,3650\nHardware,800,920,760,2480';
+      filename = 'Lesson7_Printing_Practice.csv';
+      break;
+    default:
+      csvData = 'Name,Value\nSample 1,100\nSample 2,200\nSample 3,150';
+      filename = 'Practice_Data.csv';
+  }
+  
+  // Create and download the file
+  const blob = new Blob([csvData], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  window.URL.revokeObjectURL(url);
+  
+  toast(`Downloaded ${filename} - Open it in Excel to practice!`);
+}
+
+async function showExample() {
+  const activeLesson = document.querySelector('.lesson.active');
+  if (!activeLesson) {
+    toast('Please select a lesson first');
+    return;
+  }
+  
+  const lessonId = activeLesson.getAttribute('data-lesson-id');
+  const examplePrompt = `Show me a specific micro-example for the ${LESSONS[lessonId].title} lesson with exact values and step-by-step instructions.`;
+  
+  await sendMessageToTutor(examplePrompt, 'normal');
+}
+
+async function retryEasier() {
+  const retryPrompt = `The learner is struggling with the current topic. Please provide an easier explanation, simplify the steps, and show a very small example with exact numbers. Break it down into smaller pieces.`;
+  
+  await sendMessageToTutor(retryPrompt, 'remediate');
+}
+
+async function advanceTopic() {
+  const advancePrompt = `The learner has mastered the current concept. Please introduce the next concept in the syllabus with one micro-exercise and then a short 3-question quiz.`;
+  
+  await sendMessageToTutor(advancePrompt, 'advance');
+}
+
+async function improveSyllabus() {
+  const progress = loadProgress();
+  const lastResults = Object.entries(progress)
+    .filter(([_, p]) => p.last)
+    .map(([lesson, p]) => `${lesson}: ${p.done ? 'completed' : 'in progress'} (${p.last})`)
+    .join(', ');
+  
+  const improvePrompt = `Based on the user's recent progress and any struggles in [${lastResults}], please propose a revised 3-lesson sequence with measurable objectives and one tiny practice per lesson. Keep all steps Windows-specific.`;
+  
+  await sendMessageToTutor(improvePrompt, 'normal');
+}
+
+async function sendMessageToTutor(prompt, mode = 'normal') {
+  addMessage('user', prompt);
+  const history = loadHistory();
+  history.push({ role: 'user', content: prompt });
+  saveHistory(history);
+
+  disableSend(true);
+  const { reply, error } = await sendToTutor(prompt, null, mode);
+  disableSend(false);
+  
+  if (error) {
+    const errorMsg = error.includes('OPENAI_API_KEY') 
+      ? 'OpenAI API key is missing or invalid. Please check your environment settings.'
+      : 'Sorry, I could not reach the tutor. Please try again.';
+    toast(errorMsg);
+    addMessage('assistant', errorMsg);
+    return;
+  }
+  
+  addMessage('assistant', reply);
+  const updated = loadHistory();
+  updated.push({ role: 'assistant', content: reply });
+  saveHistory(updated);
+}
+
 function init() {
   renderLessons(loadProgress());
   setInitialMessage();
   els.composer.addEventListener('submit', onSend);
   els.reset.addEventListener('click', resetAll);
   autoResize(els.input);
+  
+  // Tool tray event listeners
+  els.createPracticeFile.addEventListener('click', createPracticeFile);
+  els.showExample.addEventListener('click', showExample);
+  els.cheatSheet.addEventListener('click', showCheatSheet);
+  els.retryEasier.addEventListener('click', retryEasier);
+  els.advanceTopic.addEventListener('click', advanceTopic);
+  els.improveSyllabus.addEventListener('click', improveSyllabus);
+  
+  // Modal event listeners
+  els.closeCheatSheet.addEventListener('click', hideCheatSheet);
+  els.cheatSheetModal.addEventListener('click', (e) => {
+    if (e.target === els.cheatSheetModal) hideCheatSheet();
+  });
 }
 
 window.addEventListener('DOMContentLoaded', init);
