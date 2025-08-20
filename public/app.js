@@ -89,7 +89,7 @@ function addMessage(role, content) {
   div.className = `message ${role}`;
   div.textContent = content;
   els.messages.appendChild(div);
-  els.messages.scrollTop = els.messages.scrollHeight;
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 function renderHistory(history) {
@@ -167,11 +167,13 @@ async function sendToTutor(text, lessonId) {
   };
   if (lessonId) payload.lessonId = lessonId;
 
+  setTyping(true);
   const res = await fetch('/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
+  setTyping(false);
 
   if (!res.ok) {
     const err = await res.text().catch(() => '');
@@ -189,6 +191,7 @@ async function startLesson(lessonId) {
   els.currentLesson.textContent = `Current lesson: ${LESSONS[lessonId].title}`;
   els.markDone.style.display = 'inline-block';
   els.markDone.onclick = () => markLessonDone(lessonId);
+  highlightActiveLesson(lessonId);
 
   // Seed the chat with the actual lesson seed prompt so the user sees it
   const seed = LESSONS[lessonId].seed;
@@ -197,9 +200,12 @@ async function startLesson(lessonId) {
   history.push({ role: 'user', content: seed });
   saveHistory(history);
 
+  disableSend(true);
   // We already included the seed in history, so do not pass lessonId here to avoid double seeding
   const { reply, error } = await sendToTutor(seed);
+  disableSend(false);
   if (error) {
+    toast('Sorry, I could not reach the tutor. Please try again.');
     addMessage('assistant', 'Sorry, I could not reach the tutor. Please try again.');
     return;
   }
@@ -230,8 +236,11 @@ async function onSend(e) {
   history.push({ role: 'user', content: text });
   saveHistory(history);
 
+  disableSend(true);
   const { reply, error } = await sendToTutor(text);
+  disableSend(false);
   if (error) {
+    toast('Sorry, I could not reach the tutor. Please try again.');
     addMessage('assistant', 'Sorry, I could not reach the tutor. Please try again.');
     return;
   }
@@ -256,6 +265,54 @@ function init() {
   setInitialMessage();
   els.composer.addEventListener('submit', onSend);
   els.reset.addEventListener('click', resetAll);
+  autoResize(els.input);
 }
 
 window.addEventListener('DOMContentLoaded', init);
+
+// UI helpers
+function highlightActiveLesson(lessonId) {
+  document.querySelectorAll('.lesson').forEach(li => {
+    if (li.getAttribute('data-lesson-id') === lessonId) li.classList.add('active');
+    else li.classList.remove('active');
+  });
+}
+
+function toast(text) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = text;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function autoResize(textarea) {
+  const resize = () => {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(220, textarea.scrollHeight) + 'px';
+  };
+  ['input', 'change'].forEach(ev => textarea.addEventListener(ev, resize));
+  resize();
+}
+
+function disableSend(disabled) {
+  els.send.disabled = disabled;
+  els.input.disabled = disabled;
+}
+
+function setTyping(show) {
+  const id = 'typing-indicator';
+  let el = document.getElementById(id);
+  if (show) {
+    if (!el) {
+      el = document.createElement('div');
+      el.id = id;
+      el.className = 'message assistant typing';
+      el.textContent = 'Tutor is typing…';
+      els.messages.appendChild(el);
+      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  } else if (el) {
+    el.remove();
+  }
+}
