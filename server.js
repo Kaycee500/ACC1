@@ -147,7 +147,10 @@ app.post('/chat', async (req, res) => {
     }
 
     const data = await response.json();
-    const reply = data?.choices?.[0]?.message?.content || 'I could not get a response just now. Please try again.';
+    let reply = data?.choices?.[0]?.message?.content || 'I could not get a response just now. Please try again.';
+    
+    // Filter out "#" and "*" characters from AI responses
+    reply = reply.replace(/[#*]/g, '');
 
     res.json({ reply });
   } catch (err) {
@@ -158,7 +161,7 @@ app.post('/chat', async (req, res) => {
 
 app.listen(PORT, () => {
   // Print local URL for convenience
-  console.log(`Dad\'s Excel Tutor is running at http://localhost:${PORT}`);
+  console.log(`Dad\'s Microsoft Excel Tutor is running at http://localhost:${PORT}`);
 });
 
 // Optional: expose lessons metadata (no secrets)
